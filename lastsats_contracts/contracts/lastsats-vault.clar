@@ -1,5 +1,5 @@
 ;; ============================================================
-;; LastSats Vault — Bitcoin Inheritance Protocol
+;; LastSats Vault - Bitcoin Inheritance Protocol
 ;; Clarity Smart Contract for Stacks Blockchain
 ;; Version: 2.0.0
 ;; ============================================================
@@ -17,16 +17,16 @@
 ;;   funds until a Tier-1 audit is complete.
 ;;
 ;; SETUP FLOW (caller must do these in order):
-;;   1. create-vault      — deposit sBTC, configure interval/tier/guardian
-;;   2. add-beneficiary   — call once per beneficiary (up to tier limit)
-;;   3. finalize-beneficiaries — lock config, enforce 100% allocation
-;;   4. send-heartbeat    — regularly to keep vault alive
+;;   1. create-vault      - deposit sBTC, configure interval/tier/guardian
+;;   2. add-beneficiary   - call once per beneficiary (up to tier limit)
+;;   3. finalize-beneficiaries - lock config, enforce 100% allocation
+;;   4. send-heartbeat    - regularly to keep vault alive
 ;;
 ;; EXECUTION FLOW (after owner stops heartbeating):
-;;   5. sync-vault-status    — anyone calls once deadline passes
-;;   6. [30-day grace window] — owner can still heartbeat to cancel
-;;   7. trigger-distribution — anyone calls after grace expires
-;;   8. claim-timelocked     — beneficiaries with time-locks call later
+;;   5. sync-vault-status    - anyone calls once deadline passes
+;;   6. [30-day grace window] - owner can still heartbeat to cancel
+;;   7. trigger-distribution - anyone calls after grace expires
+;;   8. claim-timelocked     - beneficiaries with time-locks call later
 ;;
 ;; CONTRACT STATE MACHINE:
 ;;   ACTIVE    (0) -> Vault healthy. Owner has full control.
@@ -37,14 +37,14 @@
 ;;   PAUSED    (5) -> Guardian paused during grace. Max 30 days.
 ;;
 ;; SECURITY PROPERTIES:
-;;   - Contract holds sBTC in escrow — owner cannot rug after grace
-;;   - Block-height timing — immune to wall-clock manipulation
-;;   - Re-entrancy safe — Clarity is inherently non-re-entrant
-;;   - Uint overflow safe — Clarity checks by default, panics on underflow
+;;   - Contract holds sBTC in escrow - owner cannot rug after grace
+;;   - Block-height timing - immune to wall-clock manipulation
+;;   - Re-entrancy safe - Clarity is inherently non-re-entrant
+;;   - Uint overflow safe - Clarity checks by default, panics on underflow
 ;;   - Max 10 beneficiaries per vault (fold list hard cap)
 ;;   - Basis-point percentages (10000 = 100%) for integer precision
 ;;   - finalize-beneficiaries enforces exactly 100% allocation on-chain
-;;   - Terminal states (COMPLETE, EXECUTING) are stored — never recomputed
+;;   - Terminal states (COMPLETE, EXECUTING) are stored - never recomputed
 ;; ============================================================
 
 
@@ -53,7 +53,7 @@
 ;; ============================================================
 
 ;; sBTC mainnet token contract (SIP-010 fungible token)
-;; Deployed by Trust Machines — verify on: https://explorer.hiro.so/token/sBTC
+;; Deployed by Trust Machines - verify on: https://explorer.hiro.so/token/sBTC
 (define-constant SBTC-TOKEN 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)
 
 ;; Error codes
@@ -75,7 +75,7 @@
 (define-constant ERR-NOT-DISTRIBUTING      (err u119))
 (define-constant ERR-ALREADY-DISTRIBUTED   (err u120))
 
-;; Timing — Bitcoin mainnet produces ~1 block per 10 minutes = 144 blocks/day
+;; Timing - Bitcoin mainnet produces ~1 block per 10 minutes = 144 blocks/day
 (define-constant GRACE-PERIOD-BLOCKS  (* u30  u144))  ;; 30 days
 (define-constant WARNING-BLOCKS       (* u7   u144))  ;; 7-day warning window
 (define-constant PAUSE-MAX-BLOCKS     (* u30  u144))  ;; max guardian pause
@@ -96,7 +96,7 @@
 (define-constant HODLER-MAX-BEN u5)
 (define-constant WHALE-MAX-BEN  u10)
 
-;; Fold hard cap — Clarity lists are fixed-size, 10 is our max
+;; Fold hard cap - Clarity lists are fixed-size, 10 is our max
 (define-constant MAX-BENEFICIARIES u10)
 
 ;; Basis points: 10000 = 100%
@@ -125,7 +125,7 @@
   }
 )
 
-;; Beneficiary records — up to 10 per vault, indexed 0-9
+;; Beneficiary records - up to 10 per vault, indexed 0-9
 (define-map beneficiaries
   { vault-id: uint, index: uint }
   {
@@ -219,7 +219,7 @@
             (match (get pause-start-block vault)
               pause-blk
                 (if (>= block-height (+ pause-blk PAUSE-MAX-BLOCKS))
-                  u2  ;; pause expired — grace resumes
+                  u2  ;; pause expired - grace resumes
                   u5  ;; still paused
                 )
               u5
@@ -232,7 +232,7 @@
               (match (get grace-start-block vault)
                 grace-blk
                   (if (>= block-height (+ grace-blk GRACE-PERIOD-BLOCKS))
-                    u3  ;; grace expired — distribution can be triggered
+                    u3  ;; grace expired - distribution can be triggered
                     u2  ;; grace period running
                   )
                 u2  ;; grace-start-block not yet persisted, treat as grace
@@ -254,7 +254,7 @@
 )
 
 ;; Sum percentages across all 10 slots.
-;; Clarity has no loops — we enumerate all 10 indices explicitly.
+;; Clarity has no loops - we enumerate all 10 indices explicitly.
 (define-private (total-pct (vault-id uint))
   (+
     (pct-at vault-id u0) (pct-at vault-id u1) (pct-at vault-id u2)
@@ -265,7 +265,7 @@
 )
 
 ;; Process one beneficiary slot during distribution.
-;; Called via fold — iterates indices u0 through u9.
+;; Called via fold - iterates indices u0 through u9.
 ;;
 ;; For each slot:
 ;;   - Skip if already distributed
@@ -275,45 +275,29 @@
 ;;   - If time-lock > 0: record in timelocked-escrow (sBTC remains in contract)
 ;;
 ;; State carries: vault-id, total amount, ok flag (false = abort remaining)
+;; distribute-one: pure data pass - computes shares and writes escrow records.
+;; as-contract transfers cannot be called from define-private in Clarity.
+;; Actual sBTC transfers are handled in the second pass inside trigger-distribution.
 (define-private (distribute-one
   (index uint)
   (state { vault-id: uint, total: uint, ok: bool })
 )
   (if (not (get ok state))
-    state   ;; propagate earlier failure, skip remaining slots
+    state
     (match (map-get? beneficiaries { vault-id: (get vault-id state), index: index })
       b
         (if (get distributed b)
-          state   ;; already handled — skip
+          state
           (let (
             (share    (/ (* (get total state) (get percentage b)) BPS))
             (vault-id (get vault-id state))
           )
             (if (is-eq share u0)
-              state   ;; rounding produced zero — skip (edge case, BPS precision)
-              (if (is-eq (get time-lock-blocks b) u0)
-
-                ;; No time-lock: transfer immediately to beneficiary.
-                ;; Inside as-contract: tx-sender resolves to this contract address.
-                (match (as-contract (contract-call? SBTC-TOKEN transfer
-                  share tx-sender (get address b) none
-                ))
-                  success
-                    (begin
-                      (map-set beneficiaries
-                        { vault-id: vault-id, index: index }
-                        (merge b { distributed: true })
-                      )
-                      (merge state { ok: true })
-                    )
-                  err-val
-                    (merge state { ok: false })
-                )
-
-                ;; Time-lock > 0: write escrow record.
-                ;; sBTC stays in this contract — no transfer needed here.
-                ;; Beneficiary calls claim-timelocked after unlock-block.
-                (begin
+              state
+              (begin
+                ;; For time-locked beneficiaries: write escrow record now.
+                ;; sBTC remains in contract until claim-timelocked is called.
+                (if (> (get time-lock-blocks b) u0)
                   (map-set timelocked-escrow
                     { vault-id: vault-id, beneficiary: (get address b) }
                     {
@@ -322,20 +306,25 @@
                       claimed:      false,
                     }
                   )
-                  (map-set beneficiaries
-                    { vault-id: vault-id, index: index }
-                    (merge b { distributed: true })
-                  )
-                  (merge state { ok: true })
+                  true
                 )
+                ;; Mark distributed so the transfer pass below knows to process this slot
+                (map-set beneficiaries
+                  { vault-id: vault-id, index: index }
+                  (merge b { distributed: true })
+                )
+                (merge state { ok: true })
               )
             )
           )
         )
-      state   ;; empty slot — skip
+      state
     )
   )
 )
+
+
+
 
 
 ;; ============================================================
@@ -347,7 +336,7 @@
 ;; Step 1 in setup flow. Transfers sBTC from caller to this contract.
 ;;
 ;; The SIP-010 sBTC token enforces (is-eq sender tx-sender) internally,
-;; so the caller must be the one signing this transaction — no delegation.
+;; so the caller must be the one signing this transaction - no delegation.
 ;;
 ;; Args:
 ;;   heartbeat-interval  uint             Blocks between required check-ins.
@@ -372,7 +361,7 @@
     (asserts! (<= tier TIER-WHALE)                   ERR-NOT-AUTHORIZED)
 
     ;; Transfer sBTC from caller into this contract's custody.
-    ;; tx-sender here is the original caller — not inside as-contract.
+    ;; tx-sender here is the original caller - not inside as-contract.
     ;; SIP-010 asserts sender == tx-sender, so we pass tx-sender directly.
     (try! (contract-call? SBTC-TOKEN transfer
       sbtc-amount
@@ -425,7 +414,7 @@
 ;;   percentage          uint       Basis points (1-10000). Cumulative max 10000.
 ;;   time-lock-blocks    uint       Blocks after distribution before claiming (0 = immediate).
 ;;
-;; Returns: (ok new-count) — count after adding.
+;; Returns: (ok new-count) - count after adding.
 ;; ------------------------------------------------------------
 (define-public (add-beneficiary
   (vault-id            uint)
@@ -533,7 +522,7 @@
 
 ;; ------------------------------------------------------------
 ;; sync-vault-status
-;; Step 5. Permissionless — anyone can call once the deadline passes.
+;; Step 5. Permissionless - anyone can call once the deadline passes.
 ;; Persists grace-start-block to storage so the 30-day grace timer
 ;; is anchored to a real block height, not computed lazily.
 ;; Call this as soon as you detect a vault's deadline has passed.
@@ -605,7 +594,7 @@
 
 ;; ------------------------------------------------------------
 ;; trigger-distribution
-;; Step 7. Permissionless — anyone can call after grace expires.
+;; Step 7. Permissionless - anyone can call after grace expires.
 ;; Iterates all 10 beneficiary slots using fold.
 ;;
 ;; Immediate transfers: sends sBTC directly to beneficiary.
@@ -617,6 +606,15 @@
 ;;
 ;; Returns: (ok true)
 ;; ------------------------------------------------------------
+;; trigger-distribution
+;; Two-pass approach required because as-contract is not valid in define-private:
+;;
+;; Pass 1 (distribute-one fold): pure data pass - marks each beneficiary as
+;; distributed and writes timelocked-escrow records. No transfers yet.
+;;
+;; Pass 2 (explicit per-slot): executes the actual as-contract sBTC transfers
+;; for immediate-release beneficiaries. Time-locked slots are skipped here -
+;; their sBTC stays in contract until beneficiary calls claim-timelocked.
 (define-public (trigger-distribution (vault-id uint))
   (let (
     (vault       (unwrap! (map-get? vaults { vault-id: vault-id }) ERR-VAULT-NOT-FOUND))
@@ -626,29 +624,58 @@
     (asserts! (is-eq live-status u3) ERR-NOT-DISTRIBUTING)
     (asserts! (get finalized vault)  ERR-VAULT-NOT-ACTIVE)
 
-    ;; Set status to EXECUTING (3) immediately.
-    ;; This is stored — compute-status will return u3 for re-entry attempts.
-    (map-set vaults { vault-id: vault-id }
-      (merge vault { status: u3 })
-    )
+    ;; Lock to EXECUTING immediately - prevents re-entry
+    (map-set vaults { vault-id: vault-id } (merge vault { status: u3 }))
 
-    ;; Iterate all 10 slots. distribute-one handles empty slots gracefully.
+    ;; Pass 1: mark all slots as distributed, write timelocked-escrow records
     (let (
-      (result (fold distribute-one
+      (data-result (fold distribute-one
         (list u0 u1 u2 u3 u4 u5 u6 u7 u8 u9)
         { vault-id: vault-id, total: amount, ok: true }
       ))
     )
-      ;; If any transfer failed, revert the whole transaction
-      (asserts! (get ok result) ERR-TRANSFER-FAILED)
+      (asserts! (get ok data-result) ERR-TRANSFER-FAILED)
+
+      ;; Pass 2: execute as-contract transfers for immediate-release slots only.
+      ;; We check each slot individually - as-contract is valid here in define-public.
+      (let (
+        (b0 (map-get? beneficiaries { vault-id: vault-id, index: u0 }))
+        (b1 (map-get? beneficiaries { vault-id: vault-id, index: u1 }))
+        (b2 (map-get? beneficiaries { vault-id: vault-id, index: u2 }))
+        (b3 (map-get? beneficiaries { vault-id: vault-id, index: u3 }))
+        (b4 (map-get? beneficiaries { vault-id: vault-id, index: u4 }))
+        (b5 (map-get? beneficiaries { vault-id: vault-id, index: u5 }))
+        (b6 (map-get? beneficiaries { vault-id: vault-id, index: u6 }))
+        (b7 (map-get? beneficiaries { vault-id: vault-id, index: u7 }))
+        (b8 (map-get? beneficiaries { vault-id: vault-id, index: u8 }))
+        (b9 (map-get? beneficiaries { vault-id: vault-id, index: u9 }))
+      )
+        ;; Transfer for each slot if: slot exists, time-lock is 0, share > 0
+        (match b0 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b1 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b2 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b3 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b4 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b5 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b6 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b7 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b8 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+        (match b9 ben (if (and (is-eq (get time-lock-blocks ben) u0) (> (/ (* amount (get percentage ben)) BPS) u0))
+          (try! (as-contract (contract-call? SBTC-TOKEN transfer (/ (* amount (get percentage ben)) BPS) tx-sender (get address ben) none))) true) true)
+      )
 
       ;; Mark COMPLETE
-      (map-set vaults { vault-id: vault-id }
-        (merge vault { status: u4 })
-      )
-      (var-set total-sbtc-protected
-        (- (var-get total-sbtc-protected) amount)
-      )
+      (map-set vaults { vault-id: vault-id } (merge vault { status: u4 }))
+      (var-set total-sbtc-protected (- (var-get total-sbtc-protected) amount))
 
       (ok true)
     )
@@ -664,7 +691,7 @@
 ;; Args:
 ;;   vault-id  uint  The vault this escrow belongs to.
 ;;
-;; Returns: (ok amount) — micro-sBTC claimed.
+;; Returns: (ok amount) - micro-sBTC claimed.
 ;; ------------------------------------------------------------
 (define-public (claim-timelocked (vault-id uint))
   (let (
@@ -701,10 +728,10 @@
 ;; ------------------------------------------------------------
 ;; withdraw-vault
 ;; Owner closes a vault and recovers sBTC. Only while ACTIVE or WARNING.
-;; Cannot be called once the grace period has started — funds are
+;; Cannot be called once the grace period has started - funds are
 ;; locked from that point to protect beneficiaries.
 ;;
-;; Returns: (ok amount) — micro-sBTC returned to owner.
+;; Returns: (ok amount) - micro-sBTC returned to owner.
 ;; ------------------------------------------------------------
 (define-public (withdraw-vault (vault-id uint))
   (let (
@@ -745,7 +772,7 @@
   (map-get? vaults { vault-id: vault-id })
 )
 
-;; Live computed status — may differ from stored status field
+;; Live computed status - may differ from stored status field
 ;; Use this for UI; the stored `status` field may lag during transitions
 (define-read-only (get-vault-status (vault-id uint))
   (compute-status vault-id)

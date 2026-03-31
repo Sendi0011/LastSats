@@ -5,10 +5,6 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-[contracts.lastsats]
-path = 'contracts/lastsats.clar'
-clarity_version = 4
-epoch = 'latest'
 
 [contracts.lastsats-vault]
 path = 'contracts/lastsats-vault.clar'
