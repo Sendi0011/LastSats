@@ -7,7 +7,7 @@ import WalletModal from './WalletModal';
 import { Shield, ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
-  const { connected, address, walletType, disconnect, sbtcBalance } = useWallet();
+  const { connected, stxAddress: address, walletType, disconnect, sbtcBalance, loadingBalances } = useWallet();
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -168,7 +168,7 @@ export default function Navbar() {
                     />
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{shortAddress}</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-                      {sbtcBalance.toFixed(4)} sBTC
+                      {loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`}
                     </span>
                     <ChevronDown size={14} color="var(--text-muted)" />
                   </button>
@@ -205,7 +205,7 @@ export default function Navbar() {
                       <hr className="divider" style={{ margin: '4px 0' }} />
                       {[
                         { icon: <Copy size={14} />, label: copied ? 'Copied!' : 'Copy Address', action: copyAddress },
-                        { icon: <ExternalLink size={14} />, label: 'View on Explorer', action: () => {} },
+                        { icon: <ExternalLink size={14} />, label: 'View on Explorer', action: () => window.open(`https://explorer.hiro.so/address/${address}`, '_blank') },
                       ].map((item) => (
                         <button
                           key={item.label}

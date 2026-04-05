@@ -253,7 +253,7 @@ function VaultCard({ vault, onClick }: { vault: Vault; onClick: () => void }) {
 }
 
 export default function Dashboard() {
-  const { connected, address, sbtcBalance, btcBalance, stxBalance } = useWallet();
+  const { connected, stxAddress, sbtcBalance, stxBalance, loadingBalances, refreshBalances } = useWallet();
   const [vaults, setVaults] = useState<Vault[]>(MOCK_VAULTS);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedVault, setSelectedVault] = useState<Vault | null>(null);
@@ -369,19 +369,34 @@ export default function Dashboard() {
               </span>
             </p>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="btn-primary"
-            style={{
-              padding: '11px 22px',
-              fontSize: 14,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <Plus size={16} /> New Vault
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={refreshBalances}
+              disabled={loadingBalances}
+              title="Refresh on-chain balances"
+              style={{
+                padding: '11px 14px',
+                borderRadius: 10,
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-bright)',
+                color: loadingBalances ? 'var(--text-muted)' : 'var(--text-secondary)',
+                cursor: loadingBalances ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: 14,
+                transition: 'all 0.2s',
+              }}
+            >
+              <TrendingUp size={15} style={{ animation: loadingBalances ? 'spin 1s linear infinite' : 'none' }} />
+            </button>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="btn-primary"
+              style={{ padding: '11px 22px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}
+            >
+              <Plus size={16} /> New Vault
+            </button>
+          </div>
         </div>
 
         {/* Urgent alert */}
@@ -420,8 +435,8 @@ export default function Dashboard() {
           }}
         >
           <StatCard icon={<Shield size={16} />} label="Total Protected" value={`${totalProtected.toFixed(4)} sBTC`} sub="Across all vaults" accent="var(--accent-orange)" />
-          <StatCard icon={<TrendingUp size={16} />} label="BTC Balance" value={`${btcBalance.toFixed(4)} BTC`} sub="In connected wallet" accent="#F59E0B" />
-          <StatCard icon={<Zap size={16} />} label="STX Balance" value={`${stxBalance.toFixed(0)}`} sub="For gas fees" accent="var(--accent-blue)" />
+          <StatCard icon={<TrendingUp size={16} />} label="sBTC Balance" value={loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`} sub="In connected wallet" accent="#F59E0B" />
+          <StatCard icon={<Zap size={16} />} label="STX Balance" value={loadingBalances ? '···' : `${stxBalance.toFixed(0)} STX`} sub="For gas fees" accent="var(--accent-blue)" />
           <StatCard icon={<Users size={16} />} label="Beneficiaries" value={`${vaults.reduce((sum, v) => sum + v.beneficiaries.length, 0)}`} sub="Protected heirs" accent="var(--accent-green)" />
         </div>
 
@@ -549,6 +564,8 @@ export default function Dashboard() {
           isSendingHeartbeat={sendingHeartbeat === selectedVault.id}
         />
       )}
+
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

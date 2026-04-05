@@ -1,62 +1,27 @@
 'use client';
 
 import { useWallet } from '@/lib/wallet-context';
-import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { X, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const WALLETS = [
-  {
-    id: 'xverse' as const,
-    name: 'Xverse',
-    description: 'The Bitcoin & Stacks Wallet',
-    icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect width="36" height="36" rx="10" fill="#1A1A2E"/>
-        <path d="M8 10h8l4 8-4 8H8l4-8-4-8z" fill="#7C3AED"/>
-        <path d="M20 10h8l-4 8 4 8h-8l4-8-4-8z" fill="#A78BFA"/>
-      </svg>
-    ),
-    popular: true,
-  },
-  {
-    id: 'leather' as const,
-    name: 'Leather',
-    description: 'Bitcoin-native DeFi wallet',
-    icon: (
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <rect width="36" height="36" rx="10" fill="#1C1200"/>
-        <rect x="8" y="14" width="20" height="14" rx="3" fill="#D97706"/>
-        <rect x="12" y="10" width="12" height="6" rx="2" fill="#B45309"/>
-        <circle cx="18" cy="21" r="2.5" fill="#1C1200"/>
-      </svg>
-    ),
-    popular: false,
-  },
-];
-
 export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
-  const { connect, isConnecting, connected } = useWallet();
-  const [connecting, setConnecting] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { connect, isConnecting, connected, error } = useWallet();
+
+  // Auto-close once connected
+  useEffect(() => {
+    if (connected && isOpen) onClose();
+  }, [connected, isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const handleConnect = async (walletId: 'xverse' | 'leather') => {
-    setConnecting(walletId);
-    setError(null);
-    try {
-      await connect(walletId);
-      onClose();
-    } catch (e) {
-      setError('Failed to connect. Please make sure your wallet extension is installed.');
-    } finally {
-      setConnecting(null);
-    }
+  const handleConnect = async () => {
+    await connect();
+    // onClose is handled by the useEffect above once connected
   };
 
   return (
@@ -112,7 +77,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
               Connect Your Wallet
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              Connect a Stacks-compatible wallet to create and manage your Bitcoin inheritance vaults.
+              Connect your Xverse or Leather wallet to create and manage your Bitcoin inheritance vaults.
             </p>
           </div>
           <button
@@ -137,79 +102,88 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           </button>
         </div>
 
-        {/* Wallet options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-          {WALLETS.map((wallet) => {
-            const isThisConnecting = connecting === wallet.id;
-            return (
-              <button
-                key={wallet.id}
-                onClick={() => handleConnect(wallet.id)}
-                disabled={!!connecting}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  padding: '16px 20px',
-                  background: isThisConnecting ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${isThisConnecting ? 'rgba(249,115,22,0.3)' : 'var(--border)'}`,
-                  borderRadius: 14,
-                  cursor: connecting ? 'not-allowed' : 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                  opacity: connecting && !isThisConnecting ? 0.5 : 1,
-                  width: '100%',
-                }}
-                onMouseEnter={(e) => {
-                  if (!connecting) {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
-                    e.currentTarget.style.borderColor = 'var(--border-bright)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isThisConnecting) {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                    e.currentTarget.style.borderColor = 'var(--border)';
-                  }
-                }}
-              >
-                <div style={{ flexShrink: 0 }}>{wallet.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
-                      {wallet.name}
-                    </span>
-                    {wallet.popular && (
-                      <span className="badge badge-orange" style={{ fontSize: 9 }}>Popular</span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{wallet.description}</span>
-                </div>
-                <div style={{ flexShrink: 0 }}>
-                  {isThisConnecting ? (
-                    <Loader2 size={18} color="var(--accent-orange)" style={{ animation: 'spin 1s linear infinite' }} />
-                  ) : (
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: '50%',
-                        border: '1px solid var(--border)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5h6M5 2l3 3-3 3" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+        {/* Supported wallets info */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          {[
+            {
+              name: 'Xverse',
+              desc: 'Bitcoin & Stacks',
+              icon: (
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                  <rect width="36" height="36" rx="10" fill="#1A1A2E"/>
+                  <path d="M8 10h8l4 8-4 8H8l4-8-4-8z" fill="#7C3AED"/>
+                  <path d="M20 10h8l-4 8 4 8h-8l4-8-4-8z" fill="#A78BFA"/>
+                </svg>
+              ),
+            },
+            {
+              name: 'Leather',
+              desc: 'Bitcoin-native DeFi',
+              icon: (
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                  <rect width="36" height="36" rx="10" fill="#1C1200"/>
+                  <rect x="8" y="14" width="20" height="14" rx="3" fill="#D97706"/>
+                  <rect x="12" y="10" width="12" height="6" rx="2" fill="#B45309"/>
+                  <circle cx="18" cy="21" r="2.5" fill="#1C1200"/>
+                </svg>
+              ),
+            },
+          ].map((w) => (
+            <div
+              key={w.name}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                padding: '16px 12px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+              }}
+            >
+              {w.icon}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>{w.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{w.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* Connect button — triggers @stacks/connect unified wallet selector */}
+        <button
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className="btn-primary"
+          style={{
+            width: '100%',
+            padding: '14px 24px',
+            fontSize: 15,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            marginBottom: 16,
+            opacity: isConnecting ? 0.8 : 1,
+          }}
+        >
+          {isConnecting ? (
+            <>
+              <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+              Connecting...
+            </>
+          ) : (
+            'Connect Wallet'
+          )}
+        </button>
 
         {/* Error */}
         {error && (
@@ -222,11 +196,30 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
               background: 'rgba(239,68,68,0.08)',
               border: '1px solid rgba(239,68,68,0.2)',
               borderRadius: 10,
-              marginBottom: 20,
+              marginBottom: 16,
             }}
           >
             <AlertCircle size={16} color="#EF4444" style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ fontSize: 13, color: '#EF4444', lineHeight: 1.5 }}>{error}</p>
+            <div>
+              <p style={{ fontSize: 13, color: '#EF4444', lineHeight: 1.5, marginBottom: 4 }}>{error}</p>
+              <a
+                href="https://www.xverse.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 12, color: '#EF4444', opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                Get Xverse <ExternalLink size={11} />
+              </a>
+              {' · '}
+              <a
+                href="https://leather.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 12, color: '#EF4444', opacity: 0.8, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                Get Leather <ExternalLink size={11} />
+              </a>
+            </div>
           </div>
         )}
 
@@ -242,6 +235,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );

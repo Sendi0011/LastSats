@@ -1,90 +1,231 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+/**
+ * Wallet context — real Xverse + Leather connect via @stacks/connect v8
+ *
+ * @stacks/connect v8 API used:
+ *   connect()          — opens wallet selector (Xverse, Leather, etc.)
+ *   disconnect()       — clears persisted session
+ *   isConnected()      — checks if a session exists in localStorage
+ *   getLocalStorage()  — returns { addresses: { stx, btc } } from cache
+ *
+ * sBTC balance is read directly from chain via SIP-010 get-balance.
+ */
 
-export type WalletType = 'xverse' | 'leather' | null;
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
+import {
+  connect,
+  disconnect as stacksDisconnect,
+  isConnected,
+  getLocalStorage,
+} from '@stacks/connect';
+import { fetchSbtcBalance, fetchStxBalance } from './stacks';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type WalletType = 'xverse' | 'leather' | 'unknown' | null;
 
 interface WalletState {
   connected: boolean;
-  address: string | null;
+  stxAddress: string | null;
+  btcAddress: string | null;
   walletType: WalletType;
-  btcBalance: number;
   sbtcBalance: number;
   stxBalance: number;
+  /** true while balances are being fetched from chain */
+  loadingBalances: boolean;
 }
 
 interface WalletContextType extends WalletState {
-  connect: (type: 'xverse' | 'leather') => Promise<void>;
+  /** Opens the @stacks/connect wallet selector */
+  connect: () => Promise<void>;
   disconnect: () => void;
+  /** Re-fetch on-chain balances manually */
+  refreshBalances: () => Promise<void>;
   isConnecting: boolean;
+  error: string | null;
 }
+
+// ── Context ───────────────────────────────────────────────────────────────────
 
 const WalletContext = createContext<WalletContextType | null>(null);
 
-// Simulated wallet connection for demo purposes
-// In production, replace with real @stacks/connect calls
-const MOCK_ADDRESS = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ';
+const EMPTY_STATE: WalletState = {
+  connected: false,
+  stxAddress: null,
+  btcAddress: null,
+  walletType: null,
+  sbtcBalance: 0,
+  stxBalance: 0,
+  loadingBalances: false,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Detect wallet type from the user-agent / installed extensions.
+ * @stacks/connect v8 doesn't expose which wallet was chosen, so we
+ * sniff window globals that each wallet injects.
+ */
+function detectWalletType(): WalletType {
+  if (typeof window === 'undefined') return null;
+  // Xverse injects window.XverseProviders or window.BitcoinProvider
+  if ((window as any).XverseProviders || (window as any).xverse) return 'xverse';
+  // Leather (formerly Hiro Wallet) injects window.LeatherProvider or window.StacksProvider
+  if ((window as any).LeatherProvider || (window as any).leather) return 'leather';
+  // Fallback — connected but type unknown
+  return 'unknown';
+}
+
+/**
+ * Pull addresses from @stacks/connect localStorage cache.
+ */
+function getAddressesFromCache(): { stxAddress: string | null; btcAddress: string | null } {
+  try {
+    const data = getLocalStorage();
+    const stxAddress = data?.addresses?.stx?.[0]?.address ?? null;
+    const btcAddress = data?.addresses?.btc?.[0]?.address ?? null;
+    return { stxAddress, btcAddress };
+  } catch {
+    return { stxAddress: null, btcAddress: null };
+  }
+}
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<WalletState>({
-    connected: false,
-    address: null,
-    walletType: null,
-    btcBalance: 0,
-    sbtcBalance: 0,
-    stxBalance: 0,
-  });
+  const [state, setState] = useState<WalletState>(EMPTY_STATE);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Prevent duplicate balance fetches
+  const fetchingRef = useRef(false);
 
-  // Restore session on mount
-  useEffect(() => {
-    const saved = sessionStorage.getItem('lastsats_wallet');
-    if (saved) {
-      try {
-        setState(JSON.parse(saved));
-      } catch {}
+  // ── Balance fetcher ─────────────────────────────────────────────────────────
+
+  const fetchBalances = useCallback(async (stxAddress: string) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    setState((s) => ({ ...s, loadingBalances: true }));
+    try {
+      const [sbtc, stx] = await Promise.all([
+        fetchSbtcBalance(stxAddress),
+        fetchStxBalance(stxAddress),
+      ]);
+      setState((s) => ({
+        ...s,
+        sbtcBalance: sbtc,
+        stxBalance: stx,
+        loadingBalances: false,
+      }));
+    } catch {
+      setState((s) => ({ ...s, loadingBalances: false }));
+    } finally {
+      fetchingRef.current = false;
     }
   }, []);
 
-  const connect = useCallback(async (type: 'xverse' | 'leather') => {
+  // ── Restore session on mount ────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isConnected()) return;
+
+    const { stxAddress, btcAddress } = getAddressesFromCache();
+    if (!stxAddress) return;
+
+    const walletType = detectWalletType();
+    setState({
+      connected: true,
+      stxAddress,
+      btcAddress,
+      walletType,
+      sbtcBalance: 0,
+      stxBalance: 0,
+      loadingBalances: true,
+    });
+
+    fetchBalances(stxAddress);
+  }, [fetchBalances]);
+
+  // ── Connect ─────────────────────────────────────────────────────────────────
+
+  const handleConnect = useCallback(async () => {
     setIsConnecting(true);
+    setError(null);
     try {
-      // Simulate wallet handshake delay
-      await new Promise(r => setTimeout(r, 1400));
-      
-      const newState: WalletState = {
+      // Opens the @stacks/connect wallet selector UI (Xverse, Leather, etc.)
+      const response = await connect();
+
+      // v8 returns { addresses: { stx: [...], btc: [...] } }
+      const stxAddress =
+        response?.addresses?.stx?.[0]?.address ?? getAddressesFromCache().stxAddress;
+      const btcAddress =
+        response?.addresses?.btc?.[0]?.address ?? getAddressesFromCache().btcAddress;
+
+      if (!stxAddress) throw new Error('No Stacks address returned from wallet.');
+
+      const walletType = detectWalletType();
+
+      setState({
         connected: true,
-        address: MOCK_ADDRESS,
-        walletType: type,
-        btcBalance: 0.84721,
-        sbtcBalance: 0.42350,
-        stxBalance: 12480.5,
-      };
-      setState(newState);
-      sessionStorage.setItem('lastsats_wallet', JSON.stringify(newState));
+        stxAddress,
+        btcAddress: btcAddress ?? null,
+        walletType,
+        sbtcBalance: 0,
+        stxBalance: 0,
+        loadingBalances: true,
+      });
+
+      // Fetch real on-chain balances after connecting
+      fetchBalances(stxAddress);
+    } catch (err: any) {
+      const msg: string = err?.message ?? 'Connection failed.';
+      // User closed the modal — not a real error
+      if (!msg.toLowerCase().includes('cancel') && !msg.toLowerCase().includes('closed')) {
+        setError(msg);
+      }
     } finally {
       setIsConnecting(false);
     }
+  }, [fetchBalances]);
+
+  // ── Disconnect ──────────────────────────────────────────────────────────────
+
+  const handleDisconnect = useCallback(() => {
+    stacksDisconnect();
+    setState(EMPTY_STATE);
+    setError(null);
   }, []);
 
-  const disconnect = useCallback(() => {
-    setState({
-      connected: false,
-      address: null,
-      walletType: null,
-      btcBalance: 0,
-      sbtcBalance: 0,
-      stxBalance: 0,
-    });
-    sessionStorage.removeItem('lastsats_wallet');
-  }, []);
+  // ── Manual balance refresh ──────────────────────────────────────────────────
+
+  const refreshBalances = useCallback(async () => {
+    if (state.stxAddress) await fetchBalances(state.stxAddress);
+  }, [state.stxAddress, fetchBalances]);
 
   return (
-    <WalletContext.Provider value={{ ...state, connect, disconnect, isConnecting }}>
+    <WalletContext.Provider
+      value={{
+        ...state,
+        connect: handleConnect,
+        disconnect: handleDisconnect,
+        refreshBalances,
+        isConnecting,
+        error,
+      }}
+    >
       {children}
     </WalletContext.Provider>
   );
 }
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useWallet() {
   const ctx = useContext(WalletContext);
