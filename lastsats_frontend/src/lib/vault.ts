@@ -1,34 +1,9 @@
-export type VaultStatus = 'active' | 'warning' | 'grace' | 'executing' | 'complete' | 'paused';
+export type { VaultStatus, Beneficiary, Vault, VaultStore } from '@/types/vault';
 
-export interface Beneficiary {
-  id: string;
-  address: string;
-  label: string;
-  percentage: number;
-  timeLockDays?: number;
-}
+import type { Vault, VaultStatus } from '@/types/vault';
 
-export interface Vault {
-  id: string;
-  name: string;
-  sbtcAmount: number;
-  status: VaultStatus;
-  heartbeatIntervalDays: number;
-  lastHeartbeat: Date;
-  nextDeadline: Date;
-  beneficiaries: Beneficiary[];
-  guardianAddress?: string;
-  createdAt: Date;
-  tier: 'free' | 'hodler' | 'whale';
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-export interface VaultStore {
-  vaults: Vault[];
-  addVault: (vault: Omit<Vault, 'id' | 'createdAt' | 'lastHeartbeat'>) => void;
-  sendHeartbeat: (vaultId: string) => void;
-}
-
-// Helpers
 export function daysUntilDeadline(deadline: Date): number {
   const now = new Date();
   const diff = deadline.getTime() - now.getTime();
@@ -65,7 +40,8 @@ export function heartbeatProgress(vault: Vault): number {
   return Math.min(100, (elapsed / total) * 100);
 }
 
-// Mock vaults for demo
+// ── Mock data ─────────────────────────────────────────────────────────────────
+
 export const MOCK_VAULTS: Vault[] = [
   {
     id: 'vault-001',
