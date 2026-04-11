@@ -1,8 +1,9 @@
 'use client';
 
 import { Vault, statusColor, statusLabel, daysUntilDeadline, heartbeatProgress } from '@/lib/vault';
-import { X, Heart, Users, Clock, Shield, AlertTriangle, CheckCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
+import { X, Heart, Users, Clock, Shield, AlertTriangle, Loader2, Copy } from 'lucide-react';
 import { useState } from 'react';
+import HeartbeatRing from '@/components/dashboard/HeartbeatRing';
 
 interface VaultDetailProps {
   vault: Vault;
@@ -153,25 +154,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
             className="card"
             style={{ padding: 24, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 20 }}
           >
-            {/* Large ring */}
-            <div style={{ position: 'relative', width: 90, height: 90, flexShrink: 0 }}>
-              <svg width="90" height="90" viewBox="0 0 90 90" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
-                <circle
-                  cx="45" cy="45" r="38"
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="6"
-                  strokeDasharray={2 * Math.PI * 38}
-                  strokeDashoffset={2 * Math.PI * 38 - (progress / 100) * 2 * Math.PI * 38}
-                  strokeLinecap="round"
-                  style={{ filter: `drop-shadow(0 0 6px ${color})`, transition: 'stroke-dashoffset 1s ease' }}
-                />
-              </svg>
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <Heart size={20} color={color} fill={isUrgent ? color : 'none'} />
-              </div>
-            </div>
+            <HeartbeatRing progress={progress} status={vault.status} size={90} strokeWidth={6} />
 
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
