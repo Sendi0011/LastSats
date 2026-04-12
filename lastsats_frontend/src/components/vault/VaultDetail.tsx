@@ -2,7 +2,7 @@
 
 import { Vault, statusColor, statusLabel, daysUntilDeadline, heartbeatProgress } from '@/lib/vault';
 import { X, Heart, Users, Clock, Shield, AlertTriangle, Loader2, Copy } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import HeartbeatRing from '@/components/dashboard/HeartbeatRing';
 import { formatUsd, formatSbtc } from '@/lib/constants';
 
@@ -19,6 +19,17 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
   const days = daysUntilDeadline(vault.nextDeadline);
   const progress = heartbeatProgress(vault);
   const isUrgent = vault.status === 'warning' || vault.status === 'grace';
+
+  // Scroll-lock + Escape to close
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handler);
+    };
+  }, [onClose]);
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
