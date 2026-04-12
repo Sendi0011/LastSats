@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Shield } from 'lucide-react';
+import { useLocalStorage } from '@/lib/useLocalStorage';
 
 export default function Waitlist() {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useLocalStorage('waitlist_submitted', false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
