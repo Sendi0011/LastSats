@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
@@ -15,6 +15,14 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const shortAddr = address ? fmt(address) : '';
+
+  // Close dropdown on Escape
+  useEffect(() => {
+    if (!showDropdown) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowDropdown(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showDropdown]);
 
   const copyAddress = () => {
     if (address) {
