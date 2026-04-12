@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface StatCardProps {
   icon: React.ReactNode;
   label: string;
