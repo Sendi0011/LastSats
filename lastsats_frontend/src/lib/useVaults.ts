@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { MOCK_VAULTS } from './vault';
+import { MOCK_VAULTS, isVaultUrgent } from './vault';
 import type { Vault, VaultStatus } from '@/types/vault';
 
 export function useVaults() {
@@ -32,9 +32,7 @@ export function useVaults() {
   }, []);
 
   const totalProtected = vaults.reduce((sum, v) => sum + v.sbtcAmount, 0);
-  const urgentVaults = vaults.filter(
-    (v) => v.status === 'warning' || v.status === 'grace'
-  );
+  const urgentVaults = vaults.filter(isVaultUrgent);
 
   return {
     vaults,
