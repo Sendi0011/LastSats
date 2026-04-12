@@ -12,6 +12,7 @@ export default function Navbar() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const shortAddr = address ? fmt(address) : '';
 
@@ -111,6 +112,15 @@ export default function Navbar() {
 
           {/* Right side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Mobile hamburger */}
+            <button
+              className="show-mobile"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: 4 }}
+            >
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
             {connected ? (
               <>
                 <Link
@@ -272,6 +282,35 @@ export default function Navbar() {
       </nav>
 
       <WalletModal isOpen={showWalletModal} onClose={() => setShowWalletModal(false)} />
+
+      {/* Mobile nav menu */}
+      {mobileOpen && (
+        <div
+          className="show-mobile"
+          style={{
+            position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
+            background: 'rgba(8,11,20,0.97)', backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid var(--border)',
+            padding: '16px 24px 24px',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}
+        >
+          {[
+            { label: 'How It Works', href: '#how-it-works' },
+            { label: 'Pricing', href: '#pricing' },
+            { label: 'Docs', href: '#' },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 16, fontWeight: 500, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      )}
 
       {/* Close dropdown when clicking outside */}
       {showDropdown && (
