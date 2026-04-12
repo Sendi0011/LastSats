@@ -49,7 +49,7 @@ export default function Footer() {
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          © 2025 LastSats. Non-custodial. Open source.
+          © {new Date().getFullYear()} LastSats. Non-custodial. Open source.
         </p>
       </div>
     </footer>
