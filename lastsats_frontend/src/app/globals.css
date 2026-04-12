@@ -198,6 +198,14 @@ body {
 
 .divider { border: none; border-top: 1px solid var(--border); }
 
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .hidden-mobile { display: none !important; }
+}
+@media (min-width: 769px) {
+  .show-mobile { display: none !important; }
+}
+
 .progress-track {
   height: 6px;
   background: rgba(255,255,255,0.06);
