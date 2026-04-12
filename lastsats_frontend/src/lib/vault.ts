@@ -40,6 +40,11 @@ export function heartbeatProgress(vault: Vault): number {
   return Math.min(100, (elapsed / total) * 100);
 }
 
+/** Returns true if vault needs immediate attention */
+export function isVaultUrgent(vault: Vault): boolean {
+  return vault.status === 'warning' || vault.status === 'grace';
+}
+
 // ── Mock data ─────────────────────────────────────────────────────────────────
 
 export const MOCK_VAULTS: Vault[] = [

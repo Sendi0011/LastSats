@@ -1,6 +1,6 @@
 import { AlertTriangle, ChevronRight } from 'lucide-react';
 import type { Vault } from '@/types/vault';
-import { statusColor, statusLabel, daysUntilDeadline, heartbeatProgress } from '@/lib/vault';
+import { statusColor, statusLabel, daysUntilDeadline, heartbeatProgress, isVaultUrgent } from '@/lib/vault';
 import HeartbeatRing from './HeartbeatRing';
 
 interface VaultCardProps {
@@ -12,7 +12,7 @@ export default function VaultCard({ vault, onClick }: VaultCardProps) {
   const days = daysUntilDeadline(vault.nextDeadline);
   const progress = heartbeatProgress(vault);
   const color = statusColor(vault.status);
-  const isUrgent = vault.status === 'warning' || vault.status === 'grace';
+  const isUrgent = isVaultUrgent(vault);
 
   return (
     <div
