@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
-import { Vault, Beneficiary, VaultStatus } from '@/lib/vault';
+import { Vault } from '@/lib/vault';
+import type { VaultStatus } from '@/types/vault';
 
 interface CreateVaultModalProps {
   onClose: () => void;
