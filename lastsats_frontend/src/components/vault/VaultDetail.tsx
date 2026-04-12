@@ -4,6 +4,7 @@ import { Vault, statusColor, statusLabel, daysUntilDeadline, heartbeatProgress }
 import { X, Heart, Users, Clock, Shield, AlertTriangle, Loader2, Copy } from 'lucide-react';
 import { useState } from 'react';
 import HeartbeatRing from '@/components/dashboard/HeartbeatRing';
+import { formatUsd, formatSbtc } from '@/lib/constants';
 
 interface VaultDetailProps {
   vault: Vault;
@@ -192,14 +193,14 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
                 Protected Amount
               </div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                {vault.sbtcAmount.toFixed(5)}
+                {formatSbtc(vault.sbtcAmount)}
                 <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6 }}>sBTC</span>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>~USD value</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--accent-green)' }}>
-                ${(vault.sbtcAmount * 97000).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                {formatUsd(vault.sbtcAmount)}
               </div>
             </div>
           </div>
@@ -260,7 +261,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
                       {b.percentage}%
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {(vault.sbtcAmount * b.percentage / 100).toFixed(5)} sBTC
+                      {formatSbtc(vault.sbtcAmount * b.percentage / 100)} sBTC
                     </div>
                   </div>
                 </div>
