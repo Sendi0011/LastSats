@@ -1,3 +1,4 @@
+import React from 'react';
 import { Shield, Clock, Users, Lock } from 'lucide-react';
 
 const STEPS = [

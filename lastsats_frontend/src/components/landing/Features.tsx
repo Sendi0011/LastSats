@@ -1,3 +1,4 @@
+import React from 'react';
 import { Lock, Shield, Zap, Clock, Users, Globe } from 'lucide-react';
 
 const FEATURES = [
