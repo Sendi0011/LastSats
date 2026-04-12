@@ -141,6 +141,8 @@ export default function Navbar() {
                 <div style={{ position: 'relative' }}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
+                    aria-label="Wallet menu"
+                    aria-expanded={showDropdown}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
