@@ -12,10 +12,17 @@ interface WalletModalProps {
 export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
   const { connect, isConnecting, connected, error } = useWallet();
 
-  // Auto-close once connected
   useEffect(() => {
     if (connected && isOpen) onClose();
   }, [connected, isOpen, onClose]);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
