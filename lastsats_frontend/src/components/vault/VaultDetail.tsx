@@ -353,10 +353,6 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
         </div>
       </div>
 
-      <style>{`@keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }`}</style>
     </div>
   );
 }
