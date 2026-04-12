@@ -17,6 +17,10 @@ export default function VaultCard({ vault, onClick }: VaultCardProps) {
   return (
     <div
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open vault: ${vault.name}`}
       className="card card-hover"
       style={{
         padding: 24, cursor: 'pointer',
