@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 import { Vault, Beneficiary, VaultStatus } from '@/lib/vault';
 
@@ -24,6 +24,17 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Scroll-lock + Escape to close
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && !loading) onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handler);
+    };
+  }, [onClose, loading]);
 
   // Step 1
   const [vaultName, setVaultName] = useState('');
