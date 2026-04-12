@@ -11,7 +11,6 @@ export default function Navbar() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
