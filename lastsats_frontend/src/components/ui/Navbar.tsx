@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
 import { Shield, ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide-react';
+import { shortAddress as fmt } from '@/lib/constants';
 
 export default function Navbar() {
   const { connected, stxAddress: address, walletType, disconnect, sbtcBalance, loadingBalances } = useWallet();
@@ -12,9 +13,7 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const shortAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : '';
+  const shortAddr = address ? fmt(address) : '';
 
   const copyAddress = () => {
     if (address) {
@@ -165,7 +164,7 @@ export default function Navbar() {
                         boxShadow: '0 0 6px var(--accent-green)',
                       }}
                     />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{shortAddress}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{shortAddr}</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                       {loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`}
                     </span>
