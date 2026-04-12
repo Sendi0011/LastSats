@@ -303,7 +303,9 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
                 </div>
                 <button
                   onClick={() => copy(vault.guardianAddress!, 'guardian')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                  aria-label={copied === 'guardian' ? 'Copied!' : 'Copy guardian address'}
+                  title={copied === 'guardian' ? 'Copied!' : 'Copy address'}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied === 'guardian' ? 'var(--accent-green)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
                 >
                   <Copy size={13} />
                 </button>
