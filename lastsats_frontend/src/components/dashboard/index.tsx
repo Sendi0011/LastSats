@@ -10,6 +10,7 @@ import StatCard from './StatCard';
 import VaultCard from './VaultCard';
 import CreateVaultModal from '@/components/vault/CreateVaultModal';
 import VaultDetail from '@/components/vault/VaultDetail';
+import { EmptyState } from '@/components/ui';
 
 export default function Dashboard() {
   const { connected, sbtcBalance, stxBalance, loadingBalances, refreshBalances } = useWallet();
@@ -239,14 +240,16 @@ export default function Dashboard() {
 
         {/* Vault grid */}
         {vaults.length === 0 ? (
-          <div className="card" style={{ padding: '64px 32px', textAlign: 'center' }}>
-            <Shield size={40} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
-            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>No vaults yet</h3>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>Create your first vault to start protecting your Bitcoin inheritance.</p>
-            <button onClick={() => setShowCreate(true)} className="btn-primary" style={{ padding: '11px 24px', fontSize: 14 }}>
-              <Plus size={16} style={{ display: 'inline', marginRight: 6 }} /> Create First Vault
-            </button>
-          </div>
+          <EmptyState
+            icon={<Shield size={40} />}
+            title="No vaults yet"
+            description="Create your first vault to start protecting your Bitcoin inheritance."
+            action={
+              <button onClick={() => setShowCreate(true)} className="btn-primary" style={{ padding: '11px 24px', fontSize: 14 }}>
+                <Plus size={16} style={{ display: 'inline', marginRight: 6 }} /> Create First Vault
+              </button>
+            }
+          />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
             {vaults.map((vault) => (
