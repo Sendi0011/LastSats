@@ -47,6 +47,9 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
       />
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={vault.name}
         style={{
           position: 'relative',
           background: 'var(--bg-card)',

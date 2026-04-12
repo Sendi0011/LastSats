@@ -112,6 +112,9 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
 
       <div
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create New Vault"
         style={{
           position: 'relative',
           background: 'var(--bg-card)',
