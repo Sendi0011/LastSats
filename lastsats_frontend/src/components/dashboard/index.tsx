@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
-import { Shield, Plus, Users, AlertTriangle, Lock, TrendingUp, Zap } from 'lucide-react';
+import { Shield, Plus, Users, Lock, TrendingUp, Zap } from 'lucide-react';
 import { useVaults } from '@/lib/useVaults';
 import type { Vault } from '@/types/vault';
 import StatCard from './StatCard';
 import VaultCard from './VaultCard';
+import UrgentBanner from './UrgentBanner';
 import CreateVaultModal from '@/components/vault/CreateVaultModal';
 import VaultDetail from '@/components/vault/VaultDetail';
 import { EmptyState } from '@/components/ui';
@@ -218,17 +219,7 @@ export default function Dashboard() {
         </div>
 
         {/* Urgent alert */}
-        {urgentCount > 0 && (
-          <div style={{ padding: '16px 20px', background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-            <AlertTriangle size={18} color="var(--accent-orange)" style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-orange)', fontFamily: 'var(--font-display)' }}>
-                {urgentCount} vault{urgentCount > 1 ? 's require' : ' requires'} your attention.
-              </span>
-              <span style={{ fontSize: 14, color: 'var(--text-secondary)', marginLeft: 6 }}>Send a heartbeat to keep your vault active.</span>
-            </div>
-          </div>
-        )}
+        <UrgentBanner count={urgentCount} />
 
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 36 }}>
