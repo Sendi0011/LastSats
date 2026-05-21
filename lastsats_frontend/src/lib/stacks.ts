@@ -52,7 +52,8 @@ export async function fetchSbtcBalance(stxAddress: string): Promise<number> {
         : BigInt(raw?.value ?? raw ?? 0);
 
     return Number(micro) / 1e8;
-  } catch {
+  } catch (error) {
+    console.warn('Direct contract call failed, falling back to REST API:', error);
     return fetchSbtcBalanceRest(stxAddress);
   }
 }
@@ -66,14 +67,19 @@ async function fetchSbtcBalanceRest(stxAddress: string): Promise<number> {
     const res = await fetch(
       `${HIRO_API_BASE}/extended/v1/address/${stxAddress}/balances`
     );
-    if (!res.ok) return 0;
+    
+    if (!res.ok) {
+      console.error(`Hiro API error: ${res.status} ${res.statusText}`);
+      return 0;
+    }
 
     const data = await res.json();
     // The key format used by the Hiro API for fungible tokens
     const key = `${SBTC_CONTRACT_ADDRESS}.${SBTC_CONTRACT_NAME}::sbtc-token`;
     const entry = data?.fungible_tokens?.[key];
     return entry ? Number(entry.balance) / 1e8 : 0;
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch sBTC balance from REST API:', error);
     return 0;
   }
 }
@@ -89,10 +95,16 @@ export async function fetchStxBalance(stxAddress: string): Promise<number> {
     const res = await fetch(
       `${HIRO_API_BASE}/extended/v1/address/${stxAddress}/balances`
     );
-    if (!res.ok) return 0;
+    
+    if (!res.ok) {
+      console.error(`Hiro API error fetching STX balance: ${res.status} ${res.statusText}`);
+      return 0;
+    }
+    
     const data = await res.json();
     return Number(data?.stx?.balance ?? 0) / 1e6;
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch STX balance:', error);
     return 0;
   }
 }
