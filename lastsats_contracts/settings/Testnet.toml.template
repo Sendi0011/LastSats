@@ -1,0 +1,10 @@
+[network]
+name = "testnet"
+stacks_node_rpc_address = "https://api.testnet.hiro.so"
+deployment_fee_rate = 10
+
+[accounts.deployer]
+# SECURITY WARNING: Never commit real mnemonics to version control!
+# Set this via environment variable: CLARINET_DEPLOYER_MNEMONIC
+# Or use: clarinet deployments generate --testnet
+mnemonic = "REPLACE_WITH_YOUR_TESTNET_MNEMONIC_OR_USE_ENV_VAR"

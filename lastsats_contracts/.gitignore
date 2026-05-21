@@ -1,13 +1,18 @@
 
+# Deployment settings with credentials - keep templates in git but ignore actual configs
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+**/settings/Devnet.toml
+
+# Clarinet cache and logs
 .cache/**
 history.txt
-
 logs
 *.log
 npm-debug.log*
 coverage
 *.info
 costs-reports.json
+
+# Dependencies
 node_modules
