@@ -40,6 +40,15 @@ export async function formatUsd(sbtc: number): Promise<string> {
   });
 }
 
+/** Synchronous USD formatting with cached price (for components that can't use async) */
+export function formatUsdSync(sbtc: number): string {
+  return (sbtc * cachedPrice.value).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
+}
+
 /** Format a sBTC amount with 5 decimal places */
 export function formatSbtc(amount: number): string {
   return amount.toFixed(5);
