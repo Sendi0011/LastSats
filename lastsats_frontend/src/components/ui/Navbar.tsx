@@ -103,6 +103,8 @@ export default function Navbar() {
               <Link
                 key={item.label}
                 href={item.href}
+                role="menuitem"
+                aria-label={`Navigate to ${item.label} section`}
                 style={{
                   color: 'var(--text-secondary)',
                   textDecoration: 'none',
@@ -133,6 +135,8 @@ export default function Navbar() {
               <>
                 <Link
                   href="/dashboard"
+                  role="button"
+                  aria-label="Go to dashboard"
                   style={{
                     padding: '8px 16px',
                     borderRadius: 8,
@@ -159,8 +163,9 @@ export default function Navbar() {
                 <div style={{ position: 'relative' }}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    aria-label="Wallet menu"
+                    aria-label={`Wallet menu for ${shortAddr}. ${sbtcBalance.toFixed(4)} sBTC balance`}
                     aria-expanded={showDropdown}
+                    aria-haspopup="menu"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -193,6 +198,8 @@ export default function Navbar() {
 
                   {showDropdown && (
                     <div
+                      role="menu"
+                      aria-label="Wallet actions"
                       style={{
                         position: 'absolute',
                         top: '100%',
@@ -228,6 +235,8 @@ export default function Navbar() {
                         <button
                           key={item.label}
                           onClick={() => { item.action(); setShowDropdown(false); }}
+                          role="menuitem"
+                          aria-label={item.label}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -252,6 +261,8 @@ export default function Navbar() {
                       <hr className="divider" style={{ margin: '4px 0' }} />
                       <button
                         onClick={() => { disconnect(); setShowDropdown(false); }}
+                        role="menuitem"
+                        aria-label="Disconnect wallet"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -280,6 +291,7 @@ export default function Navbar() {
               <button
                 onClick={() => setShowWalletModal(true)}
                 className="btn-primary"
+                aria-label="Connect your wallet to LastSats"
                 style={{ padding: '9px 20px', fontSize: 14 }}
               >
                 Connect Wallet

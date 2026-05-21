@@ -33,6 +33,10 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wallet-modal-title"
+      aria-describedby="wallet-modal-description"
       style={{
         position: 'fixed',
         inset: 0,
@@ -73,6 +77,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h2
+              id="wallet-modal-title"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 700,
@@ -83,12 +88,13 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
             >
               Connect Your Wallet
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <p id="wallet-modal-description" style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
               Connect your Xverse or Leather wallet to create and manage your Bitcoin inheritance vaults.
             </p>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close wallet connection modal"
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid var(--border)',
@@ -170,6 +176,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           onClick={handleConnect}
           disabled={isConnecting}
           className="btn-primary"
+          aria-label={isConnecting ? "Connecting to wallet..." : "Connect wallet to LastSats"}
           style={{
             width: '100%',
             padding: '14px 24px',
@@ -195,6 +202,8 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
         {/* Error */}
         {error && (
           <div
+            role="alert"
+            aria-live="polite"
             style={{
               display: 'flex',
               alignItems: 'flex-start',
