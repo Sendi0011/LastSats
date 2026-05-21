@@ -19,6 +19,43 @@ export const STACKS_NETWORK = IS_MAINNET ? STACKS_MAINNET : STACKS_TESTNET;
 export const SBTC_CONTRACT_ADDRESS = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4';
 export const SBTC_CONTRACT_NAME = 'sbtc-token';
 
+// LastSats contract address from environment
+const LASTSATS_CONTRACT_ENV = process.env.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS;
+
+/**
+ * Validate and parse a Stacks contract address
+ * Format: SP/ST + 39 chars + . + contract-name
+ */
+function validateContractAddress(address: string | undefined): string {
+  if (!address) {
+    throw new Error('NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS environment variable is required');
+  }
+  
+  // Basic Stacks principal validation
+  const principalRegex = /^(SP|ST)[0-9A-HJKMNP-TV-Z]{39}$/;
+  const parts = address.split('.');
+  
+  if (parts.length !== 2) {
+    throw new Error(`Invalid contract address format: ${address}. Expected format: SP1234...ABCD.contract-name`);
+  }
+  
+  const [principal, contractName] = parts;
+  
+  if (!principalRegex.test(principal)) {
+    throw new Error(`Invalid Stacks principal: ${principal}. Must start with SP/ST and be 41 characters total`);
+  }
+  
+  if (!contractName || contractName.length === 0) {
+    throw new Error(`Contract name cannot be empty in address: ${address}`);
+  }
+  
+  return address;
+}
+
+// Validate contract address on module load
+export const LASTSATS_CONTRACT_ADDRESS = validateContractAddress(LASTSATS_CONTRACT_ENV);
+export const LASTSATS_CONTRACT_NAME = LASTSATS_CONTRACT_ADDRESS.split('.')[1];
+
 // Hiro public REST API
 export const HIRO_API_BASE = IS_MAINNET
   ? 'https://api.hiro.so'
