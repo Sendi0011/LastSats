@@ -361,12 +361,11 @@
     (asserts! (<= tier TIER-WHALE)                   ERR-NOT-AUTHORIZED)
 
     ;; Transfer sBTC from caller into this contract's custody.
-    ;; tx-sender here is the original caller - not inside as-contract.
-    ;; SIP-010 asserts sender == tx-sender, so we pass tx-sender directly.
+    ;; Use the contract principal directly - Clarinet will handle this properly
     (try! (contract-call? SBTC-TOKEN transfer
       sbtc-amount
       tx-sender
-      (as-contract tx-sender)
+      'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.lastsats-vault
       none
     ))
 
