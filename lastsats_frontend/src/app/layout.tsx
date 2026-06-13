@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { WalletProvider } from '@/lib/wallet-context';
-import { Navbar } from '@/components/ui';
+import { Navbar, DemoBanner } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'LastSats — Bitcoin Inheritance Protocol',
@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <WalletProvider>
           <Navbar />
+          <DemoBanner />
           <main>{children}</main>
         </WalletProvider>
       </body>

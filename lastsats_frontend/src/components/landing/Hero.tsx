@@ -15,8 +15,11 @@ const STATS = [
 const TRUST_SIGNALS = ['Non-custodial', 'Open source', 'Audited contracts', 'Free tier available'];
 
 export default function Hero() {
-  const { connected } = useWallet();
+  const { connected, isMockMode } = useWallet();
   const [showModal, setShowModal] = useState(false);
+
+  // Adjust padding based on demo mode
+  const topPadding = isMockMode ? 160 : 120; // Add extra 40px for demo banner
 
   return (
     <section
@@ -27,7 +30,7 @@ export default function Hero() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '120px 24px 80px',
+        padding: `${topPadding}px 24px 80px`,
         overflow: 'hidden',
       }}
       className="grid-bg"

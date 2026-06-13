@@ -482,4 +482,6 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
           </>
         )}
       </div>
-      
+    </div>
+  );
+}
