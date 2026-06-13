@@ -42,6 +42,37 @@ To connect to a real deployed contract:
 
 3. Restart the development server
 
+## Deployment
+
+### Vercel (Recommended)
+
+The application is configured to deploy seamlessly on Vercel:
+
+1. **Connect your GitHub repository to Vercel**
+2. **The build will automatically use webpack instead of Turbopack** (configured via `vercel.json`)
+3. **Mock mode is enabled by default** - no environment variables needed
+
+For production with real contract:
+- Add `NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS` environment variable in Vercel dashboard
+- Set `NEXT_PUBLIC_STACKS_NETWORK` to `mainnet` or `testnet`
+
+### Manual Deployment
+
+Use the included deployment script:
+
+```bash
+# Make script executable and run
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+### Build Configuration
+
+The project uses **webpack** for production builds to ensure compatibility:
+- Development: Uses Turbopack for faster dev builds
+- Production: Uses webpack to avoid module resolution issues
+- Vercel: Automatically configured via `vercel.json`
+
 ## Getting Started
 
 ```bash
