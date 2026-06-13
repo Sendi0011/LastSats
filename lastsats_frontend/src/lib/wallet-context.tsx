@@ -26,7 +26,7 @@ import {
   isConnected,
   getLocalStorage,
 } from '@stacks/connect';
-import { fetchSbtcBalance, fetchStxBalance } from './stacks';
+import { fetchSbtcBalance, fetchStxBalance, IS_MOCK_MODE } from './stacks';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,6 +41,8 @@ interface WalletState {
   stxBalance: number;
   /** true while balances are being fetched from chain */
   loadingBalances: boolean;
+  /** true when using mock data instead of real blockchain data */
+  isMockMode: boolean;
 }
 
 interface WalletContextType extends WalletState {
@@ -65,6 +67,7 @@ const EMPTY_STATE: WalletState = {
   sbtcBalance: 0,
   stxBalance: 0,
   loadingBalances: false,
+  isMockMode: IS_MOCK_MODE,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -148,6 +151,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       sbtcBalance: 0,
       stxBalance: 0,
       loadingBalances: true,
+      isMockMode: IS_MOCK_MODE,
     });
 
     fetchBalances(stxAddress);
@@ -164,9 +168,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       // v8 returns { addresses: { stx: [...], btc: [...] } }
       const stxAddress =
-        response?.addresses?.stx?.[0]?.address ?? getAddressesFromCache().stxAddress;
+        (response?.addresses as any)?.stx?.[0]?.address ?? getAddressesFromCache().stxAddress;
       const btcAddress =
-        response?.addresses?.btc?.[0]?.address ?? getAddressesFromCache().btcAddress;
+        (response?.addresses as any)?.btc?.[0]?.address ?? getAddressesFromCache().btcAddress;
 
       if (!stxAddress) throw new Error('No Stacks address returned from wallet.');
 
@@ -180,6 +184,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         sbtcBalance: 0,
         stxBalance: 0,
         loadingBalances: true,
+        isMockMode: IS_MOCK_MODE,
       });
 
       // Fetch real on-chain balances after connecting
