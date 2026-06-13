@@ -1,3 +1,5 @@
+'use client';
+
 import { Shield } from 'lucide-react';
 
 const FOOTER_LINKS = ['Docs', 'GitHub', 'Twitter', 'Audit Report'];
