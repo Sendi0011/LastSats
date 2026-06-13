@@ -30,7 +30,8 @@ const LASTSATS_CONTRACT_ENV = process.env.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS;
 function validateContractAddress(address: string | undefined): string {
   // Allow mock mode when no contract address is set
   if (!address) {
-    console.warn('⚠️  NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS not set - using mock mode');
+    console.warn('⚠️  LastSats running in mock mode - no contract deployment required');
+    console.info('💡 To connect to real contract, set NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS environment variable');
     return 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.lastsats-vault-mock';
   }
   
