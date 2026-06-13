@@ -91,6 +91,10 @@ function detectWalletType(): WalletType {
  * Pull addresses from @stacks/connect localStorage cache.
  */
 function getAddressesFromCache(): { stxAddress: string | null; btcAddress: string | null } {
+  if (typeof window === 'undefined') {
+    return { stxAddress: null, btcAddress: null };
+  }
+  
   try {
     const data = getLocalStorage();
     const stxAddress = data?.addresses?.stx?.[0]?.address ?? null;
@@ -137,24 +141,36 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // ── Restore session on mount ────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isConnected()) return;
+    if (typeof window === 'undefined') return;
+    
+    let isMounted = true;
+    
+    try {
+      if (!isConnected()) return;
 
-    const { stxAddress, btcAddress } = getAddressesFromCache();
-    if (!stxAddress) return;
+      const { stxAddress, btcAddress } = getAddressesFromCache();
+      if (!stxAddress || !isMounted) return;
 
-    const walletType = detectWalletType();
-    setState({
-      connected: true,
-      stxAddress,
-      btcAddress,
-      walletType,
-      sbtcBalance: 0,
-      stxBalance: 0,
-      loadingBalances: true,
-      isMockMode: IS_MOCK_MODE,
-    });
+      const walletType = detectWalletType();
+      setState({
+        connected: true,
+        stxAddress,
+        btcAddress,
+        walletType,
+        sbtcBalance: 0,
+        stxBalance: 0,
+        loadingBalances: true,
+        isMockMode: IS_MOCK_MODE,
+      });
 
-    fetchBalances(stxAddress);
+      fetchBalances(stxAddress);
+    } catch (error) {
+      console.warn('Failed to restore wallet session:', error);
+    }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [fetchBalances]);
 
   // ── Connect ─────────────────────────────────────────────────────────────────

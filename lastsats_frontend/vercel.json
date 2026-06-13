@@ -1,0 +1,8 @@
+{
+  "buildCommand": "next build --webpack",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_STACKS_NETWORK": "testnet"
+  }
+}

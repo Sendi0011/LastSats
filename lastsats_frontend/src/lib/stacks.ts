@@ -10,7 +10,7 @@ import {
 
 // ── Network ───────────────────────────────────────────────────────────────────
 
-export const IS_MAINNET = process.env.NEXT_PUBLIC_STACKS_NETWORK !== 'testnet';
+export const IS_MAINNET = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_STACKS_NETWORK !== 'testnet';
 export const STACKS_NETWORK = IS_MAINNET ? STACKS_MAINNET : STACKS_TESTNET;
 
 // ── Contract addresses ────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ export const SBTC_CONTRACT_ADDRESS = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4'
 export const SBTC_CONTRACT_NAME = 'sbtc-token';
 
 // LastSats contract address from environment
-const LASTSATS_CONTRACT_ENV = process.env.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS;
+const LASTSATS_CONTRACT_ENV = typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS : undefined;
 
 /**
  * Validate and parse a Stacks contract address
