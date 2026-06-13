@@ -25,10 +25,13 @@ const LASTSATS_CONTRACT_ENV = process.env.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS;
 /**
  * Validate and parse a Stacks contract address
  * Format: SP/ST + 39 chars + . + contract-name
+ * Returns mock address in dev mode when contract address is not set
  */
 function validateContractAddress(address: string | undefined): string {
+  // Allow mock mode when no contract address is set
   if (!address) {
-    throw new Error('NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS environment variable is required');
+    console.warn('⚠️  NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS not set - using mock mode');
+    return 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.lastsats-vault-mock';
   }
   
   // Basic Stacks principal validation
@@ -56,6 +59,9 @@ function validateContractAddress(address: string | undefined): string {
 export const LASTSATS_CONTRACT_ADDRESS = validateContractAddress(LASTSATS_CONTRACT_ENV);
 export const LASTSATS_CONTRACT_NAME = LASTSATS_CONTRACT_ADDRESS.split('.')[1];
 
+// Mock mode detection
+export const IS_MOCK_MODE = !LASTSATS_CONTRACT_ENV || LASTSATS_CONTRACT_ADDRESS.includes('mock');
+
 // Hiro public REST API
 export const HIRO_API_BASE = IS_MAINNET
   ? 'https://api.hiro.so'
@@ -67,8 +73,18 @@ export const HIRO_API_BASE = IS_MAINNET
  * Read sBTC balance directly from chain via SIP-010 `get-balance`.
  * Falls back to Hiro REST API if the RPC call fails.
  * Returns balance in whole sBTC (micro-sBTC / 1e8).
+ * In mock mode, returns simulated balance.
  */
 export async function fetchSbtcBalance(stxAddress: string): Promise<number> {
+  // Return mock data in mock mode
+  if (IS_MOCK_MODE) {
+    // Simulate slight delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    // Mock balance based on address to be consistent
+    const addressHash = stxAddress.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return (addressHash % 100) / 100; // Between 0 and 0.99 sBTC
+  }
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -126,8 +142,18 @@ async function fetchSbtcBalanceRest(stxAddress: string): Promise<number> {
 /**
  * Fetch STX balance from Hiro REST API.
  * Returns balance in whole STX (micro-STX / 1e6).
+ * In mock mode, returns simulated balance.
  */
 export async function fetchStxBalance(stxAddress: string): Promise<number> {
+  // Return mock data in mock mode
+  if (IS_MOCK_MODE) {
+    // Simulate slight delay
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Mock balance based on address to be consistent
+    const addressHash = stxAddress.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    return ((addressHash % 1000) + 500) / 10; // Between 50 and 149.9 STX
+  }
+
   try {
     const res = await fetch(
       `${HIRO_API_BASE}/extended/v1/address/${stxAddress}/balances`
