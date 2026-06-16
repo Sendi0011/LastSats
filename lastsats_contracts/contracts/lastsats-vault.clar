@@ -46,6 +46,7 @@
 ;; CONSTANTS
 ;; ============================================================
 
+(define-constant CONTRACT-VERSION "2.3.0")
 (define-constant SBTC-TOKEN 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)
 
 ;; CONTRACT-PRINCIPAL: this contract's own address.
@@ -693,6 +694,10 @@
     (match (map-get? beneficiaries { vault-id: vault-id, index: u8 }) b (is-eq (get address b) address) false)
     (match (map-get? beneficiaries { vault-id: vault-id, index: u9 }) b (is-eq (get address b) address) false)
   )
+)
+
+(define-read-only (get-contract-version)
+  CONTRACT-VERSION
 )
 
 (define-read-only (get-protocol-stats)
