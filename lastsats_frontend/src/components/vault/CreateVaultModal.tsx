@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 import { Vault } from '@/lib/vault';
 import type { VaultStatus } from '@/types/vault';
+import { validateVaultName, validateSbtcAmount, isValidStacksAddress } from '@/lib/validation';
 
 interface CreateVaultModalProps {
   onClose: () => void;
@@ -53,40 +54,27 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   const [guardianAddress, setGuardianAddress] = useState('');
 
   const validateStep1 = () => {
-    const name = vaultName.trim();
-    const amount = parseFloat(sbtcAmount);
+    const nameValidation = validateVaultName(vaultName);
+    const amountValidation = validateSbtcAmount(sbtcAmount, sbtcBalance);
     
-    setNameError('');
-    setAmountError('');
+    setNameError(nameValidation.error || '');
+    setAmountError(amountValidation.error || '');
     
-    if (!name) {
-      setNameError('Vault name is required');
-      return false;
-    }
-    if (name.length < 3) {
-      setNameError('Vault name must be at least 3 characters');
-      return false;
-    }
-    if (!sbtcAmount || amount <= 0) {
-      setAmountError('Amount must be greater than 0');
-      return false;
-    }
-    if (amount > sbtcBalance) {
-      setAmountError('Amount exceeds available balance');
-      return false;
-    }
-    if (amount > 0.05) {
-      setAmountError('Free tier limit is 0.05 sBTC');
-      return false;
-    }
-    
-    return true;
+    return nameValidation.isValid && amountValidation.isValid;
+  };
+
+  const validateBeneficiaries = () => {
+    return beneficiaries.every((b) => 
+      b.address.trim() && 
+      b.label.trim() && 
+      isValidStacksAddress(b.address.trim())
+    ) && totalPct === 100;
   };
 
   const totalPct = beneficiaries.reduce((s, b) => s + b.percentage, 0);
   const canProceed = [
     validateStep1(),
-    beneficiaries.every((b) => b.address.trim() && b.label.trim()) && totalPct === 100,
+    validateBeneficiaries(),
     true,
     true,
   ][step];
@@ -321,7 +309,22 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <input className="input-field" placeholder="Label (e.g. Spouse, Child)" value={b.label} onChange={(e) => updateBeneficiary(b.id, 'label', e.target.value)} />
-                        <input className="input-field" placeholder="Stacks wallet address (SP...)" value={b.address} onChange={(e) => updateBeneficiary(b.id, 'address', e.target.value)} style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }} />
+                        <input 
+                          className="input-field" 
+                          placeholder="Stacks wallet address (SP...)" 
+                          value={b.address} 
+                          onChange={(e) => updateBeneficiary(b.id, 'address', e.target.value)} 
+                          style={{ 
+                            fontFamily: 'var(--font-mono)', 
+                            fontSize: 13,
+                            borderColor: b.address && !isValidStacksAddress(b.address.trim()) ? 'var(--accent-red)' : undefined
+                          }} 
+                        />
+                        {b.address && !isValidStacksAddress(b.address.trim()) && (
+                          <p style={{ fontSize: 11, color: 'var(--accent-red)', marginTop: 2 }}>
+                            Invalid Stacks address format
+                          </p>
+                        )}
                         <div style={{ display: 'flex', gap: 10 }}>
                           <div style={{ flex: 1 }}>
                             <label style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Share %</label>
