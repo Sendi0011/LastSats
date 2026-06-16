@@ -213,10 +213,14 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
               {step === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
+                    <label 
+                      htmlFor="vault-name-input"
+                      style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}
+                    >
                       Vault Name
                     </label>
                     <input
+                      id="vault-name-input"
                       className="input-field"
                       placeholder="e.g. Family Trust, Emergency Fund..."
                       value={vaultName}
@@ -225,20 +229,27 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                         setNameError('');
                       }}
                       style={{ borderColor: nameError ? 'var(--accent-red)' : undefined }}
+                      aria-invalid={!!nameError}
+                      aria-describedby={nameError ? "name-error" : undefined}
                     />
                     {nameError && (
-                      <p style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{nameError}</p>
+                      <p id="name-error" role="alert" style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{nameError}</p>
                     )}
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
+                    <label 
+                      htmlFor="sbtc-amount-input"
+                      style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}
+                    >
                       sBTC Amount to Deposit
                     </label>
                     <div style={{ position: 'relative' }}>
                       <input
+                        id="sbtc-amount-input"
                         className="input-field"
                         type="number"
                         step="0.00001"
+                        min="0"
                         placeholder="0.00000"
                         value={sbtcAmount}
                         onChange={(e) => {
@@ -249,6 +260,8 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                           paddingRight: 80,
                           borderColor: amountError ? 'var(--accent-red)' : undefined
                         }}
+                        aria-invalid={!!amountError}
+                        aria-describedby={amountError ? "amount-error" : "amount-help"}
                       />
                       <button
                         onClick={() => setSbtcAmount(Math.min(sbtcBalance, 0.05).toFixed(5))}
@@ -271,11 +284,11 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                         MAX
                       </button>
                     </div>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                    <p id="amount-help" style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                       Available: {sbtcBalance.toFixed(5)} sBTC · Free tier limit: 0.05 sBTC
                     </p>
                     {amountError && (
-                      <p style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{amountError}</p>
+                      <p id="amount-error" role="alert" style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{amountError}</p>
                     )}
                   </div>
                 </div>
