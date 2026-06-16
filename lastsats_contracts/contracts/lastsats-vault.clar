@@ -96,6 +96,40 @@
 
 
 ;; ============================================================
+;; EVENTS
+;; ============================================================
+
+(define-map vault-events
+  { event-id: uint }
+  {
+    vault-id:    uint,
+    event-type:  (string-ascii 32),
+    sender:      principal,
+    block-height: uint,
+    data:        (optional (string-ascii 256))
+  }
+)
+
+(define-data-var next-event-id uint u1)
+
+(define-private (log-event (vault-id uint) (event-type (string-ascii 32)) (data (optional (string-ascii 256))))
+  (let ((event-id (var-get next-event-id)))
+    (map-set vault-events
+      { event-id: event-id }
+      {
+        vault-id:     vault-id,
+        event-type:   event-type,
+        sender:       tx-sender,
+        block-height: block-height,
+        data:         data
+      }
+    )
+    (var-set next-event-id (+ event-id u1))
+    event-id
+  )
+)
+
+;; ============================================================
 ;; DATA MAPS
 ;; ============================================================
 
@@ -365,6 +399,9 @@
     (var-set total-vaults         (+ (var-get total-vaults) u1))
     (var-set total-sbtc-protected (+ (var-get total-sbtc-protected) sbtc-amount))
 
+    ;; Log vault creation event
+    (log-event vault-id "vault-created" (some "Vault created successfully"))
+
     (ok vault-id)
   )
 )
@@ -405,6 +442,9 @@
     )
     (map-set beneficiary-count { vault-id: vault-id } { count: (+ cur-count u1) })
 
+    ;; Log beneficiary addition
+    (log-event vault-id "beneficiary-added" (some "Beneficiary added to vault"))
+
     (ok (+ cur-count u1))
   )
 )
@@ -423,6 +463,10 @@
     (asserts! (is-eq cur-total BPS)               ERR-PCT-NOT-100)
 
     (map-set vaults { vault-id: vault-id } (merge vault { finalized: true }))
+
+    ;; Log finalization
+    (log-event vault-id "vault-finalized" (some "Beneficiaries finalized"))
+    
     (ok true)
   )
 )
@@ -715,6 +759,14 @@
     (match (map-get? beneficiaries { vault-id: vault-id, index: u7 }) b (is-eq (get address b) address) false)
     (match (map-get? beneficiaries { vault-id: vault-id, index: u8 }) b (is-eq (get address b) address) false)
     (match (map-get? beneficiaries { vault-id: vault-id, index: u9 }) b (is-eq (get address b) address) false)
+  )
+)
+
+(define-read-only (get-vault-events (vault-id uint) (limit uint))
+  (let ((events (list)))
+    ;; This would need a more sophisticated implementation in production
+    ;; For now, return empty list as placeholder
+    events
   )
 )
 
