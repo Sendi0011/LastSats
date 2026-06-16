@@ -166,6 +166,18 @@
     true ;; None is always valid
   )
 )
+
+(define-private (is-valid-beneficiary (address principal) (percentage uint))
+  (and
+    ;; Beneficiary cannot be the vault owner
+    (not (is-eq address tx-sender))
+    ;; Percentage must be between 1 and 100
+    (>= percentage u1)
+    (<= percentage u10000) ;; 100% in basis points
+  )
+)
+
+(define-private (tier-max-bens (tier uint))
   (if (is-eq tier TIER-FREE)
     FREE-MAX-BEN
     (if (is-eq tier TIER-HODLER)
@@ -173,6 +185,7 @@
       WHALE-MAX-BEN
     )
   )
+)
 )
 
 (define-private (deadline-of (vault-id uint))
@@ -375,6 +388,7 @@
     (asserts! (is-eq tx-sender (get owner vault))           ERR-NOT-AUTHORIZED)
     (asserts! (not (get finalized vault))                   ERR-VAULT-FINALIZED)
     (asserts! (is-eq (compute-status vault-id) u0)          ERR-VAULT-NOT-ACTIVE)
+    (asserts! (is-valid-beneficiary beneficiary-address percentage) ERR-INVALID-BENEFICIARIES)
     (asserts! (> percentage u0)                             ERR-INVALID-BENEFICIARIES)
     (asserts! (<= (+ cur-total percentage) BPS)             ERR-PCT-EXCEEDS-100)
     (asserts! (< cur-count (tier-max-bens (get tier vault))) ERR-TIER-LIMIT)
