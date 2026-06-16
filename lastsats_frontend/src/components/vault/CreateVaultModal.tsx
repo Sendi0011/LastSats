@@ -40,6 +40,8 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   // Step 1
   const [vaultName, setVaultName] = useState('');
   const [sbtcAmount, setSbtcAmount] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [amountError, setAmountError] = useState('');
 
   // Step 2
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryInput[]>([
@@ -50,9 +52,40 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   const [heartbeatInterval, setHeartbeatInterval] = useState(90);
   const [guardianAddress, setGuardianAddress] = useState('');
 
+  const validateStep1 = () => {
+    const name = vaultName.trim();
+    const amount = parseFloat(sbtcAmount);
+    
+    setNameError('');
+    setAmountError('');
+    
+    if (!name) {
+      setNameError('Vault name is required');
+      return false;
+    }
+    if (name.length < 3) {
+      setNameError('Vault name must be at least 3 characters');
+      return false;
+    }
+    if (!sbtcAmount || amount <= 0) {
+      setAmountError('Amount must be greater than 0');
+      return false;
+    }
+    if (amount > sbtcBalance) {
+      setAmountError('Amount exceeds available balance');
+      return false;
+    }
+    if (amount > 0.05) {
+      setAmountError('Free tier limit is 0.05 sBTC');
+      return false;
+    }
+    
+    return true;
+  };
+
   const totalPct = beneficiaries.reduce((s, b) => s + b.percentage, 0);
   const canProceed = [
-    vaultName.trim() && parseFloat(sbtcAmount) > 0 && parseFloat(sbtcAmount) <= sbtcBalance,
+    validateStep1(),
     beneficiaries.every((b) => b.address.trim() && b.label.trim()) && totalPct === 100,
     true,
     true,
@@ -199,8 +232,15 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                       className="input-field"
                       placeholder="e.g. Family Trust, Emergency Fund..."
                       value={vaultName}
-                      onChange={(e) => setVaultName(e.target.value)}
+                      onChange={(e) => {
+                        setVaultName(e.target.value);
+                        setNameError('');
+                      }}
+                      style={{ borderColor: nameError ? 'var(--accent-red)' : undefined }}
                     />
+                    {nameError && (
+                      <p style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{nameError}</p>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, fontFamily: 'var(--font-display)' }}>
@@ -213,8 +253,14 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                         step="0.00001"
                         placeholder="0.00000"
                         value={sbtcAmount}
-                        onChange={(e) => setSbtcAmount(e.target.value)}
-                        style={{ paddingRight: 80 }}
+                        onChange={(e) => {
+                          setSbtcAmount(e.target.value);
+                          setAmountError('');
+                        }}
+                        style={{ 
+                          paddingRight: 80,
+                          borderColor: amountError ? 'var(--accent-red)' : undefined
+                        }}
                       />
                       <button
                         onClick={() => setSbtcAmount(Math.min(sbtcBalance, 0.05).toFixed(5))}
@@ -240,6 +286,9 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
                       Available: {sbtcBalance.toFixed(5)} sBTC · Free tier limit: 0.05 sBTC
                     </p>
+                    {amountError && (
+                      <p style={{ fontSize: 12, color: 'var(--accent-red)', marginTop: 4 }}>{amountError}</p>
+                    )}
                   </div>
                 </div>
               )}
