@@ -56,6 +56,7 @@
 
 (define-constant ERR-NOT-AUTHORIZED        (err u100))
 (define-constant ERR-VAULT-NOT-FOUND       (err u101))
+(define-constant ERR-INVALID-TIER          (err u102))
 (define-constant ERR-INVALID-AMOUNT        (err u103))
 (define-constant ERR-INVALID-INTERVAL      (err u104))
 (define-constant ERR-INVALID-BENEFICIARIES (err u105))
@@ -314,7 +315,7 @@
   )
     (asserts! (is-valid-interval heartbeat-interval) ERR-INVALID-INTERVAL)
     (asserts! (> sbtc-amount u0)                     ERR-INVALID-AMOUNT)
-    (asserts! (<= tier TIER-WHALE)                   ERR-NOT-AUTHORIZED)
+    (asserts! (<= tier TIER-WHALE)                   ERR-INVALID-TIER)
 
     ;; Deposit: caller sends TO this contract.
     ;; CONTRACT-PRINCIPAL constant holds this contract's address (set below).
