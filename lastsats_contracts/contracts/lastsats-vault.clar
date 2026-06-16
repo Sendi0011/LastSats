@@ -49,10 +49,10 @@
 (define-constant SBTC-TOKEN 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)
 
 ;; CONTRACT-PRINCIPAL: this contract's own address.
-;; Replace with your actual deployed contract address before mainnet deployment.
+;; IMPORTANT: Update this to your actual deployed contract address before mainnet deployment.
 ;; Used as recipient in create-vault deposit transfer to avoid as-contract in let binding.
-;; Format: 'SP<your-address>.lastsats-vault
-(define-constant CONTRACT-PRINCIPAL 'SP000000000000000000002Q6VF78.lastsats-vault)
+;; Format: 'SP<your-address>.lastsats-vault or 'ST<your-address>.lastsats-vault for testnet
+(define-constant CONTRACT-PRINCIPAL 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.lastsats-vault)
 
 (define-constant ERR-NOT-AUTHORIZED        (err u100))
 (define-constant ERR-VAULT-NOT-FOUND       (err u101))
