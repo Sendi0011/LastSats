@@ -158,7 +158,14 @@
   )
 )
 
-(define-private (tier-max-bens (tier uint))
+(define-private (is-valid-guardian (guardian (optional principal)))
+  (match guardian
+    addr
+      ;; Guardian must be different from sender and must be valid principal format
+      (not (is-eq addr tx-sender))
+    true ;; None is always valid
+  )
+)
   (if (is-eq tier TIER-FREE)
     FREE-MAX-BEN
     (if (is-eq tier TIER-HODLER)
@@ -317,6 +324,7 @@
     (asserts! (is-valid-interval heartbeat-interval) ERR-INVALID-INTERVAL)
     (asserts! (> sbtc-amount u0)                     ERR-INVALID-AMOUNT)
     (asserts! (<= tier TIER-WHALE)                   ERR-INVALID-TIER)
+    (asserts! (is-valid-guardian guardian)           ERR-NOT-AUTHORIZED)
 
     ;; Deposit: caller sends TO this contract.
     ;; CONTRACT-PRINCIPAL constant holds this contract's address (set below).
