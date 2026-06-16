@@ -43,6 +43,8 @@ interface WalletState {
   loadingBalances: boolean;
   /** true when using mock data instead of real blockchain data */
   isMockMode: boolean;
+  /** error message if balance fetching fails */
+  balanceError: string | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -68,6 +70,7 @@ const EMPTY_STATE: WalletState = {
   stxBalance: 0,
   loadingBalances: false,
   isMockMode: IS_MOCK_MODE,
+  balanceError: null,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -119,7 +122,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const fetchBalances = useCallback(async (stxAddress: string) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
-    setState((s) => ({ ...s, loadingBalances: true }));
+    setState((s) => ({ ...s, loadingBalances: true, balanceError: null }));
     try {
       const [sbtc, stx] = await Promise.all([
         fetchSbtcBalance(stxAddress),
@@ -130,9 +133,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         sbtcBalance: sbtc,
         stxBalance: stx,
         loadingBalances: false,
+        balanceError: null,
       }));
-    } catch {
-      setState((s) => ({ ...s, loadingBalances: false }));
+    } catch (error) {
+      setState((s) => ({ 
+        ...s, 
+        loadingBalances: false,
+        balanceError: error instanceof Error ? error.message : 'Failed to fetch balances'
+      }));
     } finally {
       fetchingRef.current = false;
     }
