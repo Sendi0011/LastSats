@@ -1,4 +1,5 @@
 
+import { Cl, ClarityType } from "@stacks/transactions";
 import { describe, expect, it, beforeEach } from "vitest";
 
 const accounts = simnet.getAccounts();
@@ -9,8 +10,7 @@ const wallet3 = accounts.get("wallet_3")!;
 
 describe("LastSats Vault Contract", () => {
   beforeEach(() => {
-    // Reset simnet state before each test
-    simnet.setEpoch("3.0");
+    // Reset simnet state before each test (epoch managed by initSession)
   });
 
   describe("Vault Creation", () => {
@@ -97,19 +97,22 @@ describe("LastSats Vault Contract", () => {
     });
 
     it("should enforce tier beneficiary limits", () => {
-      // Add first beneficiary (free tier allows only 1)
-      simnet.callPublicFn(
-        "lastsats-vault",
-        "add-beneficiary",
-        [Cl.uint(1), Cl.principal(wallet2), Cl.uint(10000), Cl.uint(0)],
-        wallet1
-      );
+      // Tier 1 (HODLER) allows max 5. Add 5 beneficiaries at 1% each (100 bps).
+      for (let i = 0; i < 5; i++) {
+        const { result: addResult } = simnet.callPublicFn(
+          "lastsats-vault",
+          "add-beneficiary",
+          [Cl.uint(1), Cl.principal(wallet3), Cl.uint(100), Cl.uint(0)],
+          wallet1
+        );
+        expect(addResult).toBeOk(Cl.uint(i + 1));
+      }
 
-      // Try to add second beneficiary (should fail for free tier)
+      // 6th beneficiary should fail with ERR-TIER-LIMIT
       const { result } = simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
-        [Cl.uint(1), Cl.principal(wallet3), Cl.uint(5000), Cl.uint(0)],
+        [Cl.uint(1), Cl.principal(wallet3), Cl.uint(100), Cl.uint(0)],
         wallet1
       );
       expect(result).toBeErr(Cl.uint(118)); // ERR-TIER-LIMIT
@@ -230,7 +233,7 @@ describe("LastSats Vault Contract", () => {
         [Cl.uint(1)],
         wallet1
       );
-      expect(result).toBeSome();
+      expect(result).toHaveClarityType(ClarityType.OptionalSome);
     });
 
     it("should get vault status correctly", () => {

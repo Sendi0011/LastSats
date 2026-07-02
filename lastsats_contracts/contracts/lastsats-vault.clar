@@ -47,7 +47,7 @@
 ;; ============================================================
 
 (define-constant CONTRACT-VERSION "2.3.0")
-(define-constant SBTC-TOKEN 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)
+(define-constant SBTC-TOKEN 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.sbtc-token)
 
 ;; CONTRACT-PRINCIPAL: this contract's own address.
 ;; IMPORTANT: Update this to your actual deployed contract address before mainnet deployment.
