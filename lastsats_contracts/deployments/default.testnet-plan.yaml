@@ -1,0 +1,25 @@
+---
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: "https://api.testnet.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: sbtc-token
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 173107
+            path: contracts/sbtc-token-mock.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: lastsats-vault
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 176845
+            path: contracts/lastsats-vault.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "3.3"
