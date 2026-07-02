@@ -220,7 +220,6 @@
     )
   )
 )
-)
 
 (define-private (deadline-of (vault-id uint))
   (match (map-get? vaults { vault-id: vault-id })
