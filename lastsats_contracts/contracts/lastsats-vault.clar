@@ -47,7 +47,7 @@
 ;; ============================================================
 
 (define-constant CONTRACT-VERSION "2.3.0")
-(define-constant SBTC-TOKEN 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token)
+(define-constant SBTC-TOKEN 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.sbtc-token-mock)
 
 ;; CONTRACT-PRINCIPAL: this contract's own address.
 ;; IMPORTANT: Update this to your actual deployed contract address before mainnet deployment.
@@ -352,9 +352,6 @@
 
 ;; ------------------------------------------------------------
 ;; create-vault
-;; Deposits sBTC into this contract. as-contract used only to
-;; compute this contract's principal as recipient - not to
-;; execute the transfer (caller is the sender here).
 ;; ------------------------------------------------------------
 (define-public (create-vault
   (heartbeat-interval uint)
@@ -372,7 +369,6 @@
     (asserts! (is-valid-guardian guardian)           ERR-NOT-AUTHORIZED)
 
     ;; Deposit: caller sends TO this contract.
-    ;; CONTRACT-PRINCIPAL constant holds this contract's address (set below).
     (try! (contract-call? SBTC-TOKEN transfer sbtc-amount caller CONTRACT-PRINCIPAL none))
 
     (map-set vaults

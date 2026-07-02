@@ -65,6 +65,11 @@ plan:
   - id: 0
     transactions:
     - transaction-type: emulated-contract-publish
+      contract-name: sbtc-token-mock
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/sbtc-token-mock.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
       contract-name: lastsats-vault
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/lastsats-vault.clar

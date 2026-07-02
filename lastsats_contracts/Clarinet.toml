@@ -10,8 +10,10 @@ path = 'contracts/lastsats-vault.clar'
 clarity_version = 2
 epoch = 'latest'
 
-[[project.requirements]]
-contract_id = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token'
+[contracts.sbtc-token-mock]
+path = 'contracts/sbtc-token-mock.clar'
+clarity_version = 2
+epoch = 'latest'
 
 [repl.analysis]
 passes = ['check_checker']
@@ -23,7 +25,3 @@ strict = false
 trusted_sender = false
 trusted_caller = false
 callee_filter = false
-
-[repl.remote_data]
-enabled = true
-api_url = 'https://api.testnet.hiro.so'

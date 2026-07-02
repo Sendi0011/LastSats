@@ -1,4 +1,3 @@
-
 import { Cl, ClarityType } from "@stacks/transactions";
 import { describe, expect, it, beforeEach } from "vitest";
 
@@ -97,7 +96,6 @@ describe("LastSats Vault Contract", () => {
     });
 
     it("should enforce tier beneficiary limits", () => {
-      // Tier 1 (HODLER) allows max 5. Add 5 beneficiaries at 1% each (100 bps).
       for (let i = 0; i < 5; i++) {
         const { result: addResult } = simnet.callPublicFn(
           "lastsats-vault",
@@ -108,7 +106,6 @@ describe("LastSats Vault Contract", () => {
         expect(addResult).toBeOk(Cl.uint(i + 1));
       }
 
-      // 6th beneficiary should fail with ERR-TIER-LIMIT
       const { result } = simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
@@ -119,7 +116,6 @@ describe("LastSats Vault Contract", () => {
     });
 
     it("should enforce 100% allocation limit", () => {
-      // Add beneficiary with 60%
       simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
@@ -127,7 +123,6 @@ describe("LastSats Vault Contract", () => {
         wallet1
       );
 
-      // Try to add another with 50% (total would be 110%)
       const { result } = simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
@@ -149,7 +144,6 @@ describe("LastSats Vault Contract", () => {
     });
 
     it("should finalize with exactly 100% allocation", () => {
-      // Add beneficiary with 100%
       simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
@@ -167,7 +161,6 @@ describe("LastSats Vault Contract", () => {
     });
 
     it("should reject finalization with less than 100%", () => {
-      // Add beneficiary with only 50%
       simnet.callPublicFn(
         "lastsats-vault",
         "add-beneficiary",
@@ -210,7 +203,7 @@ describe("LastSats Vault Contract", () => {
         "lastsats-vault",
         "send-heartbeat",
         [Cl.uint(1)],
-        wallet2 // Wrong caller
+        wallet2
       );
       expect(result).toBeErr(Cl.uint(100)); // ERR-NOT-AUTHORIZED
     });
