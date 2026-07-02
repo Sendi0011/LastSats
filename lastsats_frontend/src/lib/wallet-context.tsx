@@ -210,6 +210,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         stxBalance: 0,
         loadingBalances: true,
         isMockMode: IS_MOCK_MODE,
+        balanceError: null,
       });
 
       // Fetch real on-chain balances after connecting
