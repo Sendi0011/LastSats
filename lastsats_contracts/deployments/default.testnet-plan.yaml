@@ -9,15 +9,8 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: sbtc-token
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 173107
-            path: contracts/sbtc-token-mock.clar
-            anchor-block-only: true
-            clarity-version: 2
-        - contract-publish:
             contract-name: lastsats-vault
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            expected-sender: SPCHTPYB58PW0W8N44PPES2KFGHCZXFWZVTEKB04
             cost: 176845
             path: contracts/lastsats-vault.clar
             anchor-block-only: true
