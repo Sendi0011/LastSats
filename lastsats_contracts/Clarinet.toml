@@ -10,11 +10,6 @@ path = 'contracts/lastsats-vault.clar'
 clarity_version = 2
 epoch = 'latest'
 
-[contracts.sbtc-token-mock]
-path = 'contracts/sbtc-token-mock.clar'
-clarity_version = 2
-epoch = 'latest'
-
 [repl.analysis]
 passes = ['check_checker']
 
