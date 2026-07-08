@@ -1,15 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info, AlertCircle } from 'lucide-react';
 import { Vault } from '@/lib/vault';
 import type { VaultStatus } from '@/types/vault';
 import { validateVaultName, validateSbtcAmount, isValidStacksAddress } from '@/lib/validation';
+import { useWallet } from '@/lib/wallet-context';
+import {
+  IS_MOCK_MODE,
+  openCreateVault,
+  fetchProtocolStats,
+  sbtcToMicro,
+  daysToBlocks,
+  TIER_TO_UINT,
+} from '@/lib/stacks';
+import { saveVaultId, setVaultName as persistVaultName } from '@/lib/useVaults';
 
 interface CreateVaultModalProps {
   onClose: () => void;
   onCreated: (vault: Vault) => void;
   sbtcBalance: number;
+}
+
+function saveBeneficiaryLabel(vaultId: string, index: number, label: string) {
+  try {
+    const raw = localStorage.getItem('lastsats-beneficiary-labels');
+    const labels = raw ? JSON.parse(raw) : {};
+    labels[`${vaultId}-${index}`] = label;
+    localStorage.setItem('lastsats-beneficiary-labels', JSON.stringify(labels));
+  } catch {}
 }
 
 const STEPS = ['Vault Setup', 'Beneficiaries', 'Settings', 'Confirm'];
@@ -23,9 +42,11 @@ interface BeneficiaryInput {
 }
 
 export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: CreateVaultModalProps) {
+  const { stxAddress } = useWallet();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
 
   // Scroll-lock + Escape to close
   useEffect(() => {
@@ -97,31 +118,80 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
     setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, [field]: value } : b)));
   };
 
+  /** Build a Vault object from form state + vault ID, called after tx submission */
+  const buildVault = (vaultId: string): Vault => ({
+    id: vaultId,
+    name: vaultName,
+    sbtcAmount: parseFloat(sbtcAmount),
+    status: 'active',
+    heartbeatIntervalDays: heartbeatInterval,
+    lastHeartbeat: new Date(),
+    nextDeadline: new Date(Date.now() + heartbeatInterval * 24 * 60 * 60 * 1000),
+    beneficiaries: beneficiaries.map((b, i) => ({
+      id: `b-${vaultId}-${i}`,
+      address: b.address,
+      label: b.label,
+      percentage: b.percentage,
+      timeLockDays: b.timeLockDays || undefined,
+    })),
+    guardianAddress: guardianAddress || undefined,
+    createdAt: new Date(),
+    tier: 'hodler',
+  });
+
   const handleDeploy = async () => {
+    setTxError(null);
+
+    if (IS_MOCK_MODE || !stxAddress) {
+      // Keep simulated flow in mock mode or when not connected
+      setLoading(true);
+      await new Promise((r) => setTimeout(r, 2500));
+      const newVault = buildVault(`vault-${Date.now()}`);
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => onCreated(newVault), 1500);
+      return;
+    }
+
+    // Estimate vault ID from protocol stats (next-vault-id)
+    let estimatedVaultId = Date.now();
+    try {
+      const stats = await fetchProtocolStats(stxAddress);
+      if (stats) estimatedVaultId = stats.nextVaultId;
+    } catch {
+      // fallback to timestamp-based ID
+    }
+
+    const amountNum = parseFloat(sbtcAmount);
+    if (isNaN(amountNum) || amountNum <= 0) return;
+
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 2500));
-    const newVault: Vault = {
-      id: `vault-${Date.now()}`,
-      name: vaultName,
-      sbtcAmount: parseFloat(sbtcAmount),
-      status: 'active',
-      heartbeatIntervalDays: heartbeatInterval,
-      lastHeartbeat: new Date(),
-      nextDeadline: new Date(Date.now() + heartbeatInterval * 24 * 60 * 60 * 1000),
-      beneficiaries: beneficiaries.map((b, i) => ({
-        id: `b-${i}`,
-        address: b.address,
-        label: b.label,
-        percentage: b.percentage,
-        timeLockDays: b.timeLockDays || undefined,
-      })),
-      guardianAddress: guardianAddress || undefined,
-      createdAt: new Date(),
-      tier: 'hodler',
-    };
-    setLoading(false);
-    setSuccess(true);
-    setTimeout(() => onCreated(newVault), 1500);
+
+    openCreateVault({
+      heartbeatIntervalBlocks: daysToBlocks(heartbeatInterval),
+      sbtcAmountMicro: sbtcToMicro(amountNum),
+      tier: BigInt(TIER_TO_UINT['hodler'] ?? 1),
+      guardian: guardianAddress && isValidStacksAddress(guardianAddress.trim())
+        ? guardianAddress.trim()
+        : undefined,
+      onFinish: () => {
+        // Save vault metadata to localStorage for future fetches
+        const vaultIdStr = String(estimatedVaultId);
+        saveVaultId(estimatedVaultId);
+        persistVaultName(vaultIdStr, vaultName);
+        beneficiaries.forEach((b, i) => {
+          if (b.label) saveBeneficiaryLabel(vaultIdStr, i, b.label);
+        });
+
+        const newVault = buildVault(vaultIdStr);
+        setLoading(false);
+        setSuccess(true);
+        setTimeout(() => onCreated(newVault), 1500);
+      },
+      onCancel: () => {
+        setLoading(false);
+      },
+    });
   };
 
   return (
