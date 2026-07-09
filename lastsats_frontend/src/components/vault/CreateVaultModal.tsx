@@ -147,12 +147,13 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
 
   /** Run add-beneficiary for one beneficiary, returns a promise that resolves on finish */
   const runAddBeneficiary = useCallback(
-    (vaultId: bigint, address: string, percentage: number, index: number): Promise<void> => {
+    (vaultId: bigint, address: string, percentage: number, timeLockDays: number): Promise<void> => {
       return new Promise((resolve, reject) => {
         openAddBeneficiary({
           vaultId,
           beneficiaryAddress: address,
-          percentageBps: pctToBasisPoints(percentage),
+          percentage: pctToBasisPoints(percentage),
+          timeLockBlocks: daysToBlocks(timeLockDays),
           onFinish: () => resolve(),
           onCancel: () => reject(new Error('User cancelled add-beneficiary')),
         });
@@ -201,7 +202,7 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
         const validBens = beneficiaries.filter((b) => isValidStacksAddress(b.address));
         try {
           for (let i = 0; i < validBens.length; i++) {
-            await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, i);
+            await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, validBens[i].timeLockDays);
           }
 
           // Finalize beneficiaries to lock them in
