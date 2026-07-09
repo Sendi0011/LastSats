@@ -4,7 +4,7 @@ import { Vault, statusColor, statusLabel, daysUntilDeadline, heartbeatProgress }
 import { X, Heart, Users, Clock, Shield, AlertTriangle, Loader2, Copy } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import HeartbeatRing from '@/components/dashboard/HeartbeatRing';
-import { formatUsd, formatSbtc } from '@/lib/constants';
+import { formatUsdSync, formatSbtc } from '@/lib/constants';
 
 interface VaultDetailProps {
   vault: Vault;
@@ -214,7 +214,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>~USD value</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--accent-green)' }}>
-                {formatUsd(vault.sbtcAmount)}
+                {formatUsdSync(vault.sbtcAmount)}
               </div>
             </div>
           </div>

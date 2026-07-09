@@ -30,18 +30,17 @@ const LASTSATS_CONTRACT_ENV = typeof process !== 'undefined' ? process.env?.NEXT
 /**
  * Validate and parse a Stacks contract address
  * Format: SP/ST + 39 chars + . + contract-name
- * Returns mock address in dev mode when contract address is not set
+ * Validates and returns the contract address from environment
  */
 function validateContractAddress(address: string | undefined): string {
-  // Allow mock mode when no contract address is set
   if (!address) {
-    console.warn('⚠️  LastSats running in mock mode - no contract deployment required');
-    console.info('💡 To connect to real contract, set NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS environment variable');
-    return 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.lastsats-vault-mock';
+    throw new Error(
+      'NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS is not set. ' +
+      'Required for production. Example: STCHTPYB58PW0W8N44PPES2KFGHCZXFWZS23JPYJ.lastsats-vault'
+    );
   }
   
-  // Basic Stacks principal validation
-  const principalRegex = /^(SP|ST)[0-9A-HJKMNP-TV-Z]{39}$/;
+  const principalRegex = /^(SP|ST)[0-9A-HJKMNP-TV-Z]{38,40}$/;
   const parts = address.split('.');
   
   if (parts.length !== 2) {
@@ -51,7 +50,7 @@ function validateContractAddress(address: string | undefined): string {
   const [principal, contractName] = parts;
   
   if (!principalRegex.test(principal)) {
-    throw new Error(`Invalid Stacks principal: ${principal}. Must start with SP/ST and be 41 characters total`);
+    throw new Error(`Invalid Stacks principal: ${principal}. Must start with SP/ST and be 40-42 characters total`);
   }
   
   if (!contractName || contractName.length === 0) {
@@ -66,9 +65,6 @@ export const LASTSATS_CONTRACT_ADDRESS = validateContractAddress(LASTSATS_CONTRA
 export const LASTSATS_CONTRACT_NAME = LASTSATS_CONTRACT_ADDRESS.split('.')[1];
 export const LASTSATS_CONTRACT_PRINCIPAL = LASTSATS_CONTRACT_ADDRESS.split('.')[0];
 
-// Mock mode detection
-export const IS_MOCK_MODE = !LASTSATS_CONTRACT_ENV || LASTSATS_CONTRACT_ADDRESS.includes('mock');
-
 // Hiro public REST API
 export const HIRO_API_BASE = IS_MAINNET
   ? 'https://api.hiro.so'
@@ -80,18 +76,8 @@ export const HIRO_API_BASE = IS_MAINNET
  * Read sBTC balance directly from chain via SIP-010 `get-balance`.
  * Falls back to Hiro REST API if the RPC call fails.
  * Returns balance in whole sBTC (micro-sBTC / 1e8).
- * In mock mode, returns simulated balance.
  */
 export async function fetchSbtcBalance(stxAddress: string): Promise<number> {
-  // Return mock data in mock mode
-  if (IS_MOCK_MODE) {
-    // Simulate slight delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    // Mock balance based on address to be consistent
-    const addressHash = stxAddress.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    return (addressHash % 100) / 100; // Between 0 and 0.99 sBTC
-  }
-
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -149,18 +135,8 @@ async function fetchSbtcBalanceRest(stxAddress: string): Promise<number> {
 /**
  * Fetch STX balance from Hiro REST API.
  * Returns balance in whole STX (micro-STX / 1e6).
- * In mock mode, returns simulated balance.
  */
 export async function fetchStxBalance(stxAddress: string): Promise<number> {
-  // Return mock data in mock mode
-  if (IS_MOCK_MODE) {
-    // Simulate slight delay
-    await new Promise(resolve => setTimeout(resolve, 200));
-    // Mock balance based on address to be consistent
-    const addressHash = stxAddress.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-    return ((addressHash % 1000) + 500) / 10; // Between 50 and 149.9 STX
-  }
-
   try {
     const res = await fetch(
       `${HIRO_API_BASE}/extended/v1/address/${stxAddress}/balances`
@@ -254,12 +230,12 @@ export async function fetchCurrentBlockHeight(): Promise<number> {
   }
 }
 
-/** Fetch raw vault data. Returns null if vault doesn't exist or in mock mode. */
+/** Fetch raw vault data. Returns null if vault doesn't exist. */
 export async function fetchRawVault(
   vaultId: number,
   userAddress: string,
 ): Promise<any | null> {
-  if (IS_MOCK_MODE) return null;
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -277,12 +253,12 @@ export async function fetchRawVault(
   }
 }
 
-/** Fetch computed vault status uint. Returns null in mock mode. */
+/** Fetch computed vault status uint. Returns null if vault doesn't exist. */
 export async function fetchRawVaultStatus(
   vaultId: number,
   userAddress: string,
 ): Promise<number | null> {
-  if (IS_MOCK_MODE) return null;
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -300,13 +276,13 @@ export async function fetchRawVaultStatus(
   }
 }
 
-/** Fetch beneficiary at a given slot. Returns null if slot empty or in mock mode. */
+/** Fetch beneficiary at a given slot. Returns null if slot empty. */
 export async function fetchRawBeneficiary(
   vaultId: number,
   index: number,
   userAddress: string,
 ): Promise<any | null> {
-  if (IS_MOCK_MODE) return null;
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -324,12 +300,11 @@ export async function fetchRawBeneficiary(
   }
 }
 
-/** Fetch beneficiary count for a vault. Returns 0 in mock mode. */
+/** Fetch beneficiary count for a vault. */
 export async function fetchBeneficiaryCount(
   vaultId: number,
   userAddress: string,
 ): Promise<number> {
-  if (IS_MOCK_MODE) return 0;
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -348,7 +323,7 @@ export async function fetchBeneficiaryCount(
   }
 }
 
-/** Fetch protocol-level stats. Returns null in mock mode. */
+/** Fetch protocol-level stats. Returns null if not available. */
 export async function fetchProtocolStats(
   userAddress: string,
 ): Promise<{
@@ -356,7 +331,7 @@ export async function fetchProtocolStats(
   totalSbtcProtected: number;
   nextVaultId: number;
 } | null> {
-  if (IS_MOCK_MODE) return null;
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -384,7 +359,7 @@ export async function fetchBlocksUntilDeadline(
   vaultId: number,
   userAddress: string,
 ): Promise<number | null> {
-  if (IS_MOCK_MODE) return null;
+
   try {
     const result = await fetchCallReadOnlyFunction({
       network: STACKS_NETWORK,
@@ -470,7 +445,6 @@ export async function fetchAllBeneficiaries(
   count: number,
   userAddress: string,
 ): Promise<VaultBeneficiaryOnchain[]> {
-  if (IS_MOCK_MODE) return [];
   const result: VaultBeneficiaryOnchain[] = [];
   for (let i = 0; i < count; i++) {
     const raw = await fetchRawBeneficiary(vaultId, i, userAddress);

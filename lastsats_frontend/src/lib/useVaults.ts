@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { MOCK_VAULTS, isVaultUrgent } from './vault';
+import { isVaultUrgent } from './vault';
 import { useWallet } from './wallet-context';
 import {
-  IS_MOCK_MODE,
   fetchRawVault,
   fetchAllBeneficiaries,
   fetchBeneficiaryCount,
@@ -76,13 +75,6 @@ export function useVaults() {
 
   // Fetch vaults from chain on mount / address change
   useEffect(() => {
-    if (IS_MOCK_MODE) {
-      setVaults(MOCK_VAULTS);
-      setLoadingVaults(false);
-      setError(null);
-      return;
-    }
-
     if (!stxAddress) {
       setVaults([]);
       setLoadingVaults(false);
@@ -166,13 +158,6 @@ export function useVaults() {
 
   const sendHeartbeat = useCallback(async (vaultId: string) => {
     setSendingHeartbeat(vaultId);
-
-    if (IS_MOCK_MODE) {
-      await new Promise((r) => setTimeout(r, 1800));
-      heartbeatUpdate(vaultId);
-      setSendingHeartbeat(null);
-      return;
-    }
 
     openSendHeartbeat({
       vaultId: BigInt(vaultId),

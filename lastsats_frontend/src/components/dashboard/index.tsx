@@ -14,7 +14,7 @@ import VaultDetail from '@/components/vault/VaultDetail';
 import { EmptyState } from '@/components/ui';
 
 export default function Dashboard() {
-  const { connected, sbtcBalance, stxBalance, loadingBalances, refreshBalances, isMockMode } = useWallet();
+  const { connected, sbtcBalance, stxBalance, loadingBalances, refreshBalances } = useWallet();
   const { vaults, addVault, sendHeartbeat, sendingHeartbeat, totalProtected, urgentVaults } = useVaults();
   const [showCreate, setShowCreate] = useState(false);
   const [selectedVault, setSelectedVault] = useState<Vault | null>(null);
@@ -22,7 +22,7 @@ export default function Dashboard() {
   const urgentCount = urgentVaults.length;
 
   // Adjust padding based on demo mode
-  const topPadding = isMockMode ? 104 : 64; // Add extra 40px for demo banner
+  const topPadding = 64;
 
   const handleHeartbeat = async (vaultId: string) => {
     await sendHeartbeat(vaultId);

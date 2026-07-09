@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 import { Vault } from '@/lib/vault';
 import type { VaultStatus } from '@/types/vault';
 import { validateVaultName, validateSbtcAmount, isValidStacksAddress } from '@/lib/validation';
 import { useWallet } from '@/lib/wallet-context';
 import {
-  IS_MOCK_MODE,
   openCreateVault,
+  openAddBeneficiary,
+  openFinalizeBeneficiaries,
   fetchProtocolStats,
   sbtcToMicro,
   daysToBlocks,
+  pctToBasisPoints,
   TIER_TO_UINT,
 } from '@/lib/stacks';
 import { saveVaultId, setVaultName as persistVaultName } from '@/lib/useVaults';
@@ -77,10 +79,14 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   const validateStep1 = () => {
     const nameValidation = validateVaultName(vaultName);
     const amountValidation = validateSbtcAmount(sbtcAmount, sbtcBalance);
-    
+    return nameValidation.isValid && amountValidation.isValid;
+  };
+
+  const showStep1Errors = () => {
+    const nameValidation = validateVaultName(vaultName);
+    const amountValidation = validateSbtcAmount(sbtcAmount, sbtcBalance);
     setNameError(nameValidation.error || '');
     setAmountError(amountValidation.error || '');
-    
     return nameValidation.isValid && amountValidation.isValid;
   };
 
@@ -139,19 +145,25 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
     tier: 'hodler',
   });
 
+  /** Run add-beneficiary for one beneficiary, returns a promise that resolves on finish */
+  const runAddBeneficiary = useCallback(
+    (vaultId: bigint, address: string, percentage: number, index: number): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        openAddBeneficiary({
+          vaultId,
+          beneficiaryAddress: address,
+          percentageBps: pctToBasisPoints(percentage),
+          onFinish: () => resolve(),
+          onCancel: () => reject(new Error('User cancelled add-beneficiary')),
+        });
+      });
+    },
+    [],
+  );
+
   const handleDeploy = async () => {
     setTxError(null);
-
-    if (IS_MOCK_MODE || !stxAddress) {
-      // Keep simulated flow in mock mode or when not connected
-      setLoading(true);
-      await new Promise((r) => setTimeout(r, 2500));
-      const newVault = buildVault(`vault-${Date.now()}`);
-      setLoading(false);
-      setSuccess(true);
-      setTimeout(() => onCreated(newVault), 1500);
-      return;
-    }
+    if (!stxAddress) return;
 
     // Estimate vault ID from protocol stats (next-vault-id)
     let estimatedVaultId = Date.now();
@@ -174,14 +186,38 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
       guardian: guardianAddress && isValidStacksAddress(guardianAddress.trim())
         ? guardianAddress.trim()
         : undefined,
-      onFinish: () => {
-        // Save vault metadata to localStorage for future fetches
+      onFinish: async () => {
         const vaultIdStr = String(estimatedVaultId);
+        const vaultIdBig = BigInt(estimatedVaultId);
+
+        // Save vault metadata to localStorage for future fetches
         saveVaultId(estimatedVaultId);
         persistVaultName(vaultIdStr, vaultName);
         beneficiaries.forEach((b, i) => {
           if (b.label) saveBeneficiaryLabel(vaultIdStr, i, b.label);
         });
+
+        // Chain add-beneficiary transactions sequentially
+        const validBens = beneficiaries.filter((b) => isValidStacksAddress(b.address));
+        try {
+          for (let i = 0; i < validBens.length; i++) {
+            await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, i);
+          }
+
+          // Finalize beneficiaries to lock them in
+          if (validBens.length > 0) {
+            await new Promise<void>((resolve, reject) => {
+              openFinalizeBeneficiaries({
+                vaultId: vaultIdBig,
+                onFinish: () => resolve(),
+                onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
+              });
+            });
+          }
+        } catch (err) {
+          // Benficiary tx was cancelled or failed — vault was still created
+          console.warn('Beneficiary setup incomplete:', err);
+        }
 
         const newVault = buildVault(vaultIdStr);
         setLoading(false);
@@ -589,7 +625,13 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
 
               {step < STEPS.length - 1 ? (
                 <button
-                  onClick={() => setStep(step + 1)}
+                  onClick={() => {
+                    if (step === 0) {
+                      const valid = showStep1Errors();
+                      if (!valid) return;
+                    }
+                    setStep(step + 1);
+                  }}
                   disabled={!canProceed}
                   className="btn-primary"
                   style={{ padding: '11px 24px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}

@@ -44,38 +44,3 @@ export function heartbeatProgress(vault: Vault): number {
 export function isVaultUrgent(vault: Vault): boolean {
   return vault.status === 'warning' || vault.status === 'grace';
 }
-
-// ── Mock data ─────────────────────────────────────────────────────────────────
-
-export const MOCK_VAULTS: Vault[] = [
-  {
-    id: 'vault-001',
-    name: 'Family Trust',
-    sbtcAmount: 0.25,
-    status: 'active',
-    heartbeatIntervalDays: 90,
-    lastHeartbeat: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000),
-    nextDeadline: new Date(Date.now() + 78 * 24 * 60 * 60 * 1000),
-    beneficiaries: [
-      { id: 'b1', address: 'SP1ABC...XYZ', label: 'Sarah (Spouse)', percentage: 60 },
-      { id: 'b2', address: 'SP2DEF...ABC', label: 'James (Son)', percentage: 40, timeLockDays: 365 * 5 },
-    ],
-    guardianAddress: 'SP3GHI...DEF',
-    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
-    tier: 'hodler',
-  },
-  {
-    id: 'vault-002',
-    name: 'Emergency Reserve',
-    sbtcAmount: 0.05,
-    status: 'warning',
-    heartbeatIntervalDays: 30,
-    lastHeartbeat: new Date(Date.now() - 24 * 24 * 60 * 60 * 1000),
-    nextDeadline: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-    beneficiaries: [
-      { id: 'b3', address: 'SP4JKL...MNO', label: 'Brother', percentage: 100 },
-    ],
-    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    tier: 'free',
-  },
-];

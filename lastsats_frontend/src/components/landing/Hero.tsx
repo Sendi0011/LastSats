@@ -15,11 +15,11 @@ const STATS = [
 const TRUST_SIGNALS = ['Non-custodial', 'Open source', 'Audited contracts', 'Free tier available'];
 
 export default function Hero() {
-  const { connected, isMockMode } = useWallet();
+  const { connected } = useWallet();
   const [showModal, setShowModal] = useState(false);
 
   // Adjust padding based on demo mode
-  const topPadding = isMockMode ? 160 : 120; // Add extra 40px for demo banner
+  const topPadding = 120;
 
   return (
     <section

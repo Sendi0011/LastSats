@@ -26,7 +26,7 @@ import {
   isConnected,
   getLocalStorage,
 } from '@stacks/connect';
-import { fetchSbtcBalance, fetchStxBalance, IS_MOCK_MODE } from './stacks';
+import { fetchSbtcBalance, fetchStxBalance } from './stacks';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,8 +41,6 @@ interface WalletState {
   stxBalance: number;
   /** true while balances are being fetched from chain */
   loadingBalances: boolean;
-  /** true when using mock data instead of real blockchain data */
-  isMockMode: boolean;
   /** error message if balance fetching fails */
   balanceError: string | null;
 }
@@ -69,7 +67,6 @@ const EMPTY_STATE: WalletState = {
   sbtcBalance: 0,
   stxBalance: 0,
   loadingBalances: false,
-  isMockMode: IS_MOCK_MODE,
   balanceError: null,
 };
 
@@ -82,11 +79,8 @@ const EMPTY_STATE: WalletState = {
  */
 function detectWalletType(): WalletType {
   if (typeof window === 'undefined') return null;
-  // Xverse injects window.XverseProviders or window.BitcoinProvider
   if ((window as any).XverseProviders || (window as any).xverse) return 'xverse';
-  // Leather (formerly Hiro Wallet) injects window.LeatherProvider or window.StacksProvider
   if ((window as any).LeatherProvider || (window as any).leather) return 'leather';
-  // Fallback — connected but type unknown
   return 'unknown';
 }
 
@@ -114,7 +108,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<WalletState>(EMPTY_STATE);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Prevent duplicate balance fetches
   const fetchingRef = useRef(false);
 
   // ── Balance fetcher ─────────────────────────────────────────────────────────
@@ -168,7 +161,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         sbtcBalance: 0,
         stxBalance: 0,
         loadingBalances: true,
-        isMockMode: IS_MOCK_MODE,
         balanceError: null,
       });
 
@@ -188,10 +180,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnecting(true);
     setError(null);
     try {
-      // Opens the @stacks/connect wallet selector UI (Xverse, Leather, etc.)
       const response = await connect();
 
-      // v8 returns { addresses: { stx: [...], btc: [...] } }
       const stxAddress =
         (response?.addresses as any)?.stx?.[0]?.address ?? getAddressesFromCache().stxAddress;
       const btcAddress =
@@ -209,15 +199,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         sbtcBalance: 0,
         stxBalance: 0,
         loadingBalances: true,
-        isMockMode: IS_MOCK_MODE,
         balanceError: null,
       });
 
-      // Fetch real on-chain balances after connecting
       fetchBalances(stxAddress);
     } catch (err: any) {
       const msg: string = err?.message ?? 'Connection failed.';
-      // User closed the modal — not a real error
       if (!msg.toLowerCase().includes('cancel') && !msg.toLowerCase().includes('closed')) {
         setError(msg);
       }

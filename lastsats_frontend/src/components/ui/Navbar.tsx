@@ -8,7 +8,7 @@ import { Shield, ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide
 import { shortAddress as fmt } from '@/lib/constants';
 
 export default function Navbar() {
-  const { connected, stxAddress: address, walletType, disconnect, sbtcBalance, loadingBalances, isMockMode } = useWallet();
+  const { connected, stxAddress: address, walletType, disconnect, sbtcBalance, loadingBalances } = useWallet();
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -192,7 +192,6 @@ export default function Navbar() {
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{shortAddr}</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                       {loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`}
-                      {isMockMode && <span style={{ color: 'var(--accent-orange)', marginLeft: 4 }}>DEMO</span>}
                     </span>
                     <ChevronDown size={14} color="var(--text-muted)" />
                   </button>
