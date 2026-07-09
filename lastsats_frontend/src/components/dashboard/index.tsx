@@ -26,7 +26,6 @@ export default function Dashboard() {
 
   const handleHeartbeat = async (vaultId: string) => {
     await sendHeartbeat(vaultId);
-    if (selectedVault?.id === vaultId) setSelectedVault(null);
   };
 
   if (!connected) {

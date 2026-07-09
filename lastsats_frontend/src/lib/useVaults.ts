@@ -8,6 +8,7 @@ import {
   fetchBeneficiaryCount,
   fetchCurrentBlockHeight,
   vaultFromOnchain,
+  openSendHeartbeat,
 } from './stacks';
 import type { Vault, VaultStatus } from '@/types/vault';
 
@@ -146,9 +147,7 @@ export function useVaults() {
     setVaults((prev) => [vault, ...prev]);
   }, []);
 
-  const sendHeartbeat = useCallback(async (vaultId: string) => {
-    setSendingHeartbeat(vaultId);
-    await new Promise((r) => setTimeout(r, 1800));
+  const heartbeatUpdate = useCallback((vaultId: string) => {
     setVaults((prev) =>
       prev.map((v) =>
         v.id === vaultId
@@ -163,8 +162,29 @@ export function useVaults() {
           : v
       )
     );
-    setSendingHeartbeat(null);
   }, []);
+
+  const sendHeartbeat = useCallback(async (vaultId: string) => {
+    setSendingHeartbeat(vaultId);
+
+    if (IS_MOCK_MODE) {
+      await new Promise((r) => setTimeout(r, 1800));
+      heartbeatUpdate(vaultId);
+      setSendingHeartbeat(null);
+      return;
+    }
+
+    openSendHeartbeat({
+      vaultId: BigInt(vaultId),
+      onFinish: () => {
+        heartbeatUpdate(vaultId);
+        setSendingHeartbeat(null);
+      },
+      onCancel: () => {
+        setSendingHeartbeat(null);
+      },
+    });
+  }, [heartbeatUpdate]);
 
   const totalProtected = vaults.reduce((sum, v) => sum + v.sbtcAmount, 0);
   const urgentVaults = vaults.filter(isVaultUrgent);
