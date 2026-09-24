@@ -1,0 +1,7 @@
+
+# deployer secret
+lastsats_contracts/.deployer-phrase
+lastsats_contracts/.testnet-deployer-phrase
+
+# deployer mnemonic — NEVER COMMIT
+lastsats_contracts/.deployer-phrase

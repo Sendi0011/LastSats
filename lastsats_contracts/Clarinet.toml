@@ -5,14 +5,12 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 
-[project.requirements]
-contract_id = "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token"
-
-[contracts.lastsats-vault]
-path = 'contracts/lastsats-vault.clar'
+[[project.requirements]]
+contract_id = 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token'
+[contracts.lastsats-vault-v2]
+path = 'contracts/lastsats-vault-v2.clar'
 clarity_version = 2
 epoch = 'latest'
-
 [repl.analysis]
 passes = ['check_checker']
 
@@ -23,3 +21,7 @@ strict = false
 trusted_sender = false
 trusted_caller = false
 callee_filter = false
+
+[repl.remote_data]
+enabled = false
+api_url = 'https://api.hiro.so'

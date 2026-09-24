@@ -52,7 +52,7 @@
 ;; CONTRACT-PRINCIPAL: this contract's own address.
 ;; IMPORTANT: Update this to your actual deployed contract address before mainnet deployment.
 ;; Used as recipient in create-vault deposit transfer to avoid as-contract in let binding.
-(define-constant CONTRACT-PRINCIPAL 'ST3D6QCYKSF0MNQWZXAJTASXP54ER6G91XSKY87WY.lastsats-vault)
+(define-constant CONTRACT-PRINCIPAL 'ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2.lastsats-vault-v2)
 
 (define-constant ERR-NOT-AUTHORIZED        (err u100))
 (define-constant ERR-VAULT-NOT-FOUND       (err u101))

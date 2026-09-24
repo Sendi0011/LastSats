@@ -20,8 +20,10 @@ export const STACKS_NETWORK = IS_MAINNET ? STACKS_MAINNET : STACKS_TESTNET;
 
 // ── Contract addresses ────────────────────────────────────────────────────────
 
-// sBTC SIP-010 token — same deployer on mainnet & testnet
-export const SBTC_CONTRACT_ADDRESS = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4';
+// sBTC SIP-010 token — network-aware (different address on mainnet vs testnet)
+export const SBTC_CONTRACT_ADDRESS = IS_MAINNET
+  ? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4'
+  : 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1';
 export const SBTC_CONTRACT_NAME = 'sbtc-token';
 
 // LastSats contract address from environment
