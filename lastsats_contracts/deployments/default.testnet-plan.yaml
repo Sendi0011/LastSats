@@ -10,7 +10,7 @@ plan:
       transactions:
         - contract-publish:
             contract-name: lastsats-vault
-            expected-sender: STCHTPYB58PW0W8N44PPES2KFGHCZXFWZS23JPYJ
+            expected-sender: ST3D6QCYKSF0MNQWZXAJTASXP54ER6G91XSKY87WY
             cost: 278720
             path: contracts/lastsats-vault.clar
             anchor-block-only: true

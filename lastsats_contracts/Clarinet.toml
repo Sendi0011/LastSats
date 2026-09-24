@@ -5,6 +5,9 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 
+[project.requirements]
+contract_id = "SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token"
+
 [contracts.lastsats-vault]
 path = 'contracts/lastsats-vault.clar'
 clarity_version = 2
