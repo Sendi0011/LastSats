@@ -5,23 +5,23 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 
+# lastsats-vault-v2 calls the real sBTC token by absolute principal, so the
+# static analyser needs real sBTC available as a requirement. (At runtime v2
+# talks to the actual deployed sBTC contract on mainnet/testnet.)
 [[project.requirements]]
 contract_id = 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token'
+
+[contracts.sbtc-mock-token]
+path = 'contracts/sbtc-mock-token.clar'
+clarity_version = 3
+epoch = 'latest'
+
 [contracts.lastsats-vault-v2]
 path = 'contracts/lastsats-vault-v2.clar'
 clarity_version = 2
 epoch = 'latest'
-[repl.analysis]
-passes = ['check_checker']
 
-[repl.analysis.lints]
-
-[repl.analysis.check_checker]
-strict = false
-trusted_sender = false
-trusted_caller = false
-callee_filter = false
-
-[repl.remote_data]
-enabled = false
-api_url = 'https://api.hiro.so'
+[contracts.lastsats-vault-v3]
+path = 'contracts/lastsats-vault-v3.clar'
+clarity_version = 2
+epoch = 'latest'

@@ -20,11 +20,16 @@ export const STACKS_NETWORK = IS_MAINNET ? STACKS_MAINNET : STACKS_TESTNET;
 
 // ── Contract addresses ────────────────────────────────────────────────────────
 
-// sBTC SIP-010 token — network-aware (different address on mainnet vs testnet)
+// sBTC SIP-010 token — network-aware (different address on mainnet vs testnet).
+// On testnet this points at the local sbtc-mock-token test contract, because the
+// real testnet sBTC faucet is exhausted and vault lifecycle testing needs funds.
 export const SBTC_CONTRACT_ADDRESS = IS_MAINNET
   ? 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4'
-  : 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1';
-export const SBTC_CONTRACT_NAME = 'sbtc-token';
+  : 'ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2';
+export const SBTC_CONTRACT_NAME = IS_MAINNET ? 'sbtc-token' : 'sbtc-mock-token';
+
+// Fungible-token asset name (the `::asset` suffix used by the Hiro API).
+export const SBTC_ASSET_NAME = IS_MAINNET ? 'sbtc-token' : 'sbtc-mock-token';
 
 // LastSats contract address from environment
 const LASTSATS_CONTRACT_ENV = typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_LASTSATS_CONTRACT_ADDRESS : undefined;
@@ -123,7 +128,7 @@ async function fetchSbtcBalanceRest(stxAddress: string): Promise<number> {
 
     const data = await res.json();
     // The key format used by the Hiro API for fungible tokens
-    const key = `${SBTC_CONTRACT_ADDRESS}.${SBTC_CONTRACT_NAME}::sbtc-token`;
+    const key = `${SBTC_CONTRACT_ADDRESS}.${SBTC_CONTRACT_NAME}::${SBTC_ASSET_NAME}`;
     const entry = data?.fungible_tokens?.[key];
     return entry ? Number(entry.balance) / 1e8 : 0;
   } catch (error) {
