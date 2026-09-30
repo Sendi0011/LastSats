@@ -10,7 +10,7 @@ import {
   openCreateVault,
   openAddBeneficiary,
   openFinalizeBeneficiaries,
-  fetchProtocolStats,
+  fetchTxResultVaultId,
   sbtcToMicro,
   daysToBlocks,
   pctToBasisPoints,
@@ -197,15 +197,6 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
     setTxError(null);
     if (!stxAddress) return;
 
-    // Estimate vault ID from protocol stats (next-vault-id)
-    let estimatedVaultId = Date.now();
-    try {
-      const stats = await fetchProtocolStats(stxAddress);
-      if (stats) estimatedVaultId = stats.nextVaultId;
-    } catch {
-      // fallback to timestamp-based ID
-    }
-
     const amountNum = parseFloat(sbtcAmount);
     if (isNaN(amountNum) || amountNum <= 0) return;
 
@@ -218,46 +209,74 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
       guardian: guardianAddress && isValidStacksAddress(guardianAddress.trim())
         ? guardianAddress.trim()
         : undefined,
-      onFinish: async () => {
-        const vaultIdStr = String(estimatedVaultId);
-        const vaultIdBig = BigInt(estimatedVaultId);
+      onFinish: async (data: { txId?: string; tx_id?: string }) => {
+        // The vault ID is chosen by the contract. Read it from the tx result
+        // instead of guessing via `next-vault-id`, which is the id for the NEXT
+        // vault and was off by one — that mismatch is what made successfully
+        // deployed vaults invisible in the UI.
+        const realVaultId = await fetchTxResultVaultId(String(data?.txId ?? data?.tx_id ?? ''));
+
+        if (realVaultId == null) {
+          setLoading(false);
+          setTxError(
+            'Vault was submitted but we could not confirm the vault ID from the transaction. ' +
+              'It may not have been created — check your wallet activity or the explorer before retrying.'
+          );
+          return;
+        }
+
+        const vaultIdStr = String(realVaultId);
+        const vaultIdBig = BigInt(realVaultId);
 
         // Save vault metadata to localStorage for future fetches
-        saveVaultId(estimatedVaultId);
+        saveVaultId(realVaultId);
         persistVaultName(vaultIdStr, vaultName);
         beneficiaries.forEach((b, i) => {
           if (b.label) saveBeneficiaryLabel(vaultIdStr, i, b.label);
         });
 
-        // Chain add-beneficiary transactions sequentially
-        const validBens = beneficiaries.filter((b) => isValidStacksAddress(b.address));
-        try {
-          for (let i = 0; i < validBens.length; i++) {
-            await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, validBens[i].timeLockDays);
-          }
-
-          // Finalize beneficiaries to lock them in
-          if (validBens.length > 0) {
-            await withTimeout(
-              new Promise<void>((resolve, reject) => {
-                openFinalizeBeneficiaries({
-                  vaultId: vaultIdBig,
-                  onFinish: () => resolve(),
-                  onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
-                });
-              }),
-              'finalize-beneficiaries'
-            );
-          }
-        } catch (err) {
-          // Benficiary tx was cancelled or failed — vault was still created
-          console.warn('Beneficiary setup incomplete:', err);
-          setTxError(err instanceof Error ? err.message : 'Beneficiary setup failed. The vault was created but beneficiaries may be incomplete.');
-        }
-
         const newVault = buildVault(vaultIdStr);
+
+        // Surface the created vault immediately. Beneficiary setup requires a
+        // further wallet prompt per beneficiary, and awaiting it here kept the
+        // button stuck on "Deploying Contract..." even though the vault was
+        // already live on-chain.
         setLoading(false);
         setSuccess(true);
+
+        // Chain add-beneficiary transactions sequentially in the background so
+        // the UI isn't blocked on extra wallet prompts.
+        const validBens = beneficiaries.filter((b) => isValidStacksAddress(b.address));
+        void (async () => {
+          try {
+            for (let i = 0; i < validBens.length; i++) {
+              await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, validBens[i].timeLockDays);
+            }
+
+            // Finalize beneficiaries to lock them in
+            if (validBens.length > 0) {
+              await withTimeout(
+                new Promise<void>((resolve, reject) => {
+                  openFinalizeBeneficiaries({
+                    vaultId: vaultIdBig,
+                    onFinish: () => resolve(),
+                    onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
+                  });
+                }),
+                'finalize-beneficiaries'
+              );
+            }
+          } catch (err) {
+            // Beneficiary tx was cancelled or failed — vault was still created
+            console.warn('Beneficiary setup incomplete:', err);
+            setTxError(
+              err instanceof Error
+                ? `Vault created, but beneficiary setup did not complete: ${err.message}`
+                : 'Vault created, but beneficiary setup did not complete.'
+            );
+          }
+        })();
+
         setTimeout(() => onCreated(newVault), 1500);
       },
       onCancel: () => {

@@ -6,6 +6,7 @@ import {
   fetchAllBeneficiaries,
   fetchBeneficiaryCount,
   fetchCurrentBlockHeight,
+  fetchVaultIdsOwnedBy,
   vaultFromOnchain,
   openSendHeartbeat,
 } from './stacks';
@@ -87,9 +88,17 @@ export function useVaults() {
       setLoadingVaults(true);
       setError(null);
       try {
-        const vaultIds = getSavedVaultIds();
-        const currentBlock = await fetchCurrentBlockHeight();
         const addr = stxAddress!;
+
+        // Union of locally cached ids and ids discovered on-chain. Relying on
+        // localStorage alone hid vaults that were deployed successfully but whose
+        // id was never cached (other device, wiped storage, or a create flow that
+        // was interrupted).
+        const cachedIds = getSavedVaultIds();
+        const onchainIds = await fetchVaultIdsOwnedBy(addr);
+        const vaultIds = Array.from(new Set([...cachedIds, ...onchainIds])).sort((a, b) => a - b);
+
+        const currentBlock = await fetchCurrentBlockHeight();
 
         const result: Vault[] = [];
 

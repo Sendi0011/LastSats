@@ -4,13 +4,75 @@
 import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 import {
   fetchCallReadOnlyFunction,
-  cvToValue,
   principalCV,
   uintCV,
   noneCV,
   someCV,
   PostConditionMode,
 } from '@stacks/transactions';
+
+
+/**
+ * Recursively decode a ClarityValue into plain JS.
+ *
+ * `fetchCallReadOnlyFunction` returns `ClarityValue` objects, and `cvToValue`
+ * only converts the outermost layer — every nested field stays wrapped as
+ * `{ type, value }`. Reading `raw['sbtc-amount']` on that yields `undefined`,
+ * which silently produced vaults with no amount/status. This walks the tree and
+ * returns real values (uint/int -> number, bool -> boolean, principal/string ->
+ * string, none -> null).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function cvToPlain(cv: unknown): any {
+  if (cv === null || cv === undefined) return null;
+
+  // Already a primitive.
+  if (typeof cv !== 'object') return cv;
+
+  // ClarityValue wrapper: { type, value }. Note `false`/`none` serialize WITHOUT
+  // a `value` key (`{type:'false'}`), so type-only cases must be handled before
+  // the generic recursion — otherwise they become truthy objects.
+  if ('type' in cv) {
+    const type = String(cv.type);
+
+    if (type === 'true') return true;
+    if (type === 'false') return false;
+    if (type === 'none') return null;
+
+    if (!('value' in cv)) return null;
+    const value = cv.value;
+
+    if (value === null || value === undefined) return null;
+
+    // `(optional none)` -> null ; `(optional T)` -> decoded inner
+    if (type.includes('optional')) return cvToPlain(value);
+
+    if (type.startsWith('uint') || type.startsWith('int')) {
+      return Number(value);
+    }
+
+    if (type === 'principal' || type === 'address') return String(value);
+    if (type.startsWith('string-ascii') || type.startsWith('string-utf8')) {
+      return String(value);
+    }
+    if (type === 'buff') return value;
+    if (type.startsWith('tuple')) return cvToPlain(value);
+    if (type.startsWith('list')) {
+      return Array.isArray(value) ? value.map(cvToPlain) : [];
+    }
+    if (type.startsWith('response')) return cvToPlain(value);
+
+    // Unknown type — try to recurse anyway.
+    return cvToPlain(value);
+  }
+
+  // Plain array / object (e.g. already unwrapped).
+  if (Array.isArray(cv)) return cv.map(cvToPlain);
+
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(cv)) out[k] = cvToPlain(v);
+  return out;
+}
 import { openContractCall } from '@stacks/connect';
 import type { VaultStatus } from '@/types/vault';
 
@@ -96,11 +158,14 @@ export async function fetchSbtcBalance(stxAddress: string): Promise<number> {
       senderAddress: stxAddress,
     });
 
-    const raw = cvToValue(result);
-    // SIP-010 get-balance returns (ok uint); cvToValue unwraps to bigint or { value }
+    const raw = cvToPlain(result);
+    // SIP-010 get-balance returns (ok uint), which cvToPlain unwraps to a number.
+    // Accept the other shapes defensively so this never throws into the REST fallback.
     const micro: bigint =
       typeof raw === 'bigint'
         ? raw
+        : typeof raw === 'number'
+        ? BigInt(raw)
         : typeof raw?.value === 'bigint'
         ? raw.value
         : BigInt(raw?.value ?? raw ?? 0);
@@ -253,8 +318,7 @@ export async function fetchRawVault(
       functionArgs: [uintCV(vaultId)],
       senderAddress: userAddress,
     });
-    const raw = cvToValue(result);
-    return raw ?? null;
+    return cvToPlain(result);
   } catch (error) {
     console.warn(`Failed to fetch vault ${vaultId}:`, error);
     return null;
@@ -276,7 +340,7 @@ export async function fetchRawVaultStatus(
       functionArgs: [uintCV(vaultId)],
       senderAddress: userAddress,
     });
-    const raw = cvToValue(result);
+    const raw = cvToPlain(result);
     return raw != null ? Number(raw) : null;
   } catch (error) {
     console.warn(`Failed to fetch vault status ${vaultId}:`, error);
@@ -300,8 +364,7 @@ export async function fetchRawBeneficiary(
       functionArgs: [uintCV(vaultId), uintCV(index)],
       senderAddress: userAddress,
     });
-    const raw = cvToValue(result);
-    return raw ?? null;
+    return cvToPlain(result);
   } catch (error) {
     console.warn(`Failed to fetch beneficiary vault=${vaultId} idx=${index}:`, error);
     return null;
@@ -322,7 +385,7 @@ export async function fetchBeneficiaryCount(
       functionArgs: [uintCV(vaultId)],
       senderAddress: userAddress,
     });
-    const raw = cvToValue(result);
+    const raw = cvToPlain(result);
     const count = raw?.count ?? raw;
     return Number(count ?? 0);
   } catch (error) {
@@ -349,7 +412,7 @@ export async function fetchProtocolStats(
       functionArgs: [],
       senderAddress: userAddress,
     });
-    const raw: any = cvToValue(result);
+    const raw = cvToPlain(result);
     if (!raw) return null;
     return {
       totalVaults: Number(raw['total-vaults'] ?? 0),
@@ -377,12 +440,79 @@ export async function fetchBlocksUntilDeadline(
       functionArgs: [uintCV(vaultId)],
       senderAddress: userAddress,
     });
-    const raw = cvToValue(result);
+    const raw = cvToPlain(result);
     return raw != null ? Number(raw) : null;
   } catch (error) {
     console.warn(`Failed to fetch blocks-until-deadline vault=${vaultId}:`, error);
     return null;
   }
+}
+
+/**
+ * Read the authoritative vault ID a create-vault tx actually produced.
+ *
+ * The vault ID is assigned by the contract (`next-vault-id` at execution time)
+ * and returned as the tx result `(ok uN)`. Guessing it client-side from
+ * `get-protocol-stats` is racy — that value is the id for the NEXT vault — so we
+ * poll the tx result instead. Returns null if the tx is unknown/failed or the
+ * result can't be parsed.
+ */
+export async function fetchTxResultVaultId(txId: string): Promise<number | null> {
+  const id = txId.startsWith('0x') ? txId.slice(2) : txId;
+  const url = `${HIRO_API_BASE}/extended/v1/tx/${id}`;
+
+  // The tx is broadcast immediately but may not be indexed yet; retry briefly.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data: any = await res.json();
+
+        if (data.tx_status === 'success') {
+          const repr = String(data.tx_result?.repr ?? '');
+          const m = repr.match(/\(ok\s+u(\d+)\)/);
+          if (m) return Number(m[1]);
+          return null;
+        }
+        // Still pending — keep polling.
+        if (data.tx_status === 'pending') {
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
+        return null; // failed/aborted
+      }
+    } catch {
+      /* fall through to retry */
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return null;
+}
+
+/**
+ * Discover which vault IDs belong to `userAddress` by scanning 1..next-vault-id.
+ *
+ * The contract has no "get vaults by owner" index, so we probe each id. This
+ * keeps the UI honest: vaults created from another browser/device, or before a
+ * localStorage wipe, still show up because state comes from chain, not just
+ * locally cached ids.
+ */
+export async function fetchVaultIdsOwnedBy(userAddress: string): Promise<number[]> {
+  const stats = await fetchProtocolStats(userAddress);
+  if (!stats) return [];
+
+  const maxId = stats.nextVaultId; // ids are 1-based; this is the next free id
+  // Bound the scan so a large protocol can't hang the dashboard on N sequential
+  // call-reads. Raise alongside `MAX_SCAN` if the protocol outgrows this.
+  const MAX_SCAN = 200;
+  const upper = Math.min(maxId, MAX_SCAN + 1);
+
+  const ids: number[] = [];
+  for (let id = 1; id < upper; id++) {
+    const raw = await fetchRawVault(id, userAddress);
+    if (raw && raw['owner'] === userAddress) ids.push(id);
+  }
+  return ids;
 }
 
 /**
