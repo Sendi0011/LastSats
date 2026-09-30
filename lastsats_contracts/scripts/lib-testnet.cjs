@@ -40,4 +40,35 @@ function writeBanner(planPath, lines) {
   fs.writeFileSync(planPath, lines.join('\n') + '\n' + body);
 }
 
-module.exports = { STACKS_TESTNET, tx, DEPLOYER, DEPLOY_DIR, deployerKey, sleep, waitStatus, writeBanner, fs };
+/**
+ * Recursively decode a ClarityValue into plain JS.
+ * Mirrors `cvToPlain` in lastsats_frontend/src/lib/stacks.ts.
+ */
+function cvToPlain(cv) {
+  if (cv === null || cv === undefined) return null;
+  if (typeof cv !== 'object') return cv;
+  if ('type' in cv) {
+    const t = String(cv.type);
+    if (t === 'true') return true;
+    if (t === 'false') return false;
+    if (t === 'none') return null;
+    if (!('value' in cv)) return null;
+    const v = cv.value;
+    if (v === null || v === undefined) return null;
+    if (t.includes('optional')) return cvToPlain(v);
+    if (t.startsWith('uint') || t.startsWith('int')) return Number(v);
+    if (t === 'principal' || t === 'address') return String(v);
+    if (t.startsWith('string-ascii') || t.startsWith('string-utf8')) return String(v);
+    if (t === 'buff') return v;
+    if (t.startsWith('tuple')) return cvToPlain(v);
+    if (t.startsWith('list')) return Array.isArray(v) ? v.map(cvToPlain) : [];
+    if (t.startsWith('response')) return cvToPlain(v);
+    return cvToPlain(v);
+  }
+  if (Array.isArray(cv)) return cv.map(cvToPlain);
+  const out = {};
+  for (const [k, v] of Object.entries(cv)) out[k] = cvToPlain(v);
+  return out;
+}
+
+module.exports = { STACKS_TESTNET, tx, DEPLOYER, DEPLOY_DIR, deployerKey, sleep, waitStatus, writeBanner, fs, cvToPlain };
