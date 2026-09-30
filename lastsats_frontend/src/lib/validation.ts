@@ -2,17 +2,30 @@
  * Validation utilities for LastSats application
  */
 
+import { validateStacksAddress } from '@stacks/transactions';
+
 /**
- * Validates a Stacks address format
+ * Validates a Stacks address.
+ *
+ * Delegates to @stacks/transactions rather than a hand-rolled regex. The old
+ * regex was `[123456789ABC…]{39}` after the SP/ST prefix, which:
+ *   - excluded `0` (zero) — it is a valid c32 character, so legitimate
+ *     addresses such as ST3D6QCYKSF0MNQWZXAJTASXP54ER6G91XSKY87WY were rejected;
+ *   - included `I`, `L`, `O`, `U`, which c32 does not use;
+ *   - included lowercase, which Stacks addresses never use;
+ *   - pinned the length to exactly 39 and did no checksum verification.
+ *
+ * The library performs real c32check decoding plus checksum and version
+ * validation, so malformed or mistyped addresses are still caught.
+ *
  * @param address - The address to validate
  * @returns true if valid, false otherwise
  */
 export function isValidStacksAddress(address: string): boolean {
   if (!address || typeof address !== 'string') return false;
-  
-  // Stacks address format: (SP|ST) + 39 characters (base58)
-  const stacksAddressRegex = /^(SP|ST)[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{39}$/;
-  return stacksAddressRegex.test(address);
+  const trimmed = address.trim();
+  if (!trimmed) return false;
+  return validateStacksAddress(trimmed);
 }
 
 /**
