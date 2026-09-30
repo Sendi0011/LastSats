@@ -85,18 +85,57 @@ function detectWalletType(): WalletType {
 }
 
 /**
- * Pull addresses from @stacks/connect localStorage cache.
+ * localStorage keys used by @stacks/connect v8.
+ * '@stacks' holds the merged address list; 'blockstack-session' holds session data.
+ */
+const STACKS_ADDRESS_KEY = '@stacks';
+const STACKS_SESSION_KEY = 'blockstack-session';
+
+/**
+ * Hard-reset the persisted @stacks/connect session.
+ *
+ * `disconnect()` normally clears these, but it can throw partway through
+ * (provider has no `disconnect`, extension locked, etc.) and leave the stale
+ * address behind. Purging directly makes disconnect idempotent.
+ */
+function purgeStacksSession(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STACKS_ADDRESS_KEY);
+    localStorage.removeItem(STACKS_SESSION_KEY);
+  } catch {
+    /* storage unavailable (private mode) — nothing to purge */
+  }
+}
+
+/**
+ * Pick the most recently connected address from the @stacks/connect cache.
+ *
+ * IMPORTANT: @stacks/connect v8 MERGES addresses on every connect
+ * (`[...cached.stx, ...new.stx]`, deduped by address). It does not replace
+ * them. So `addresses.stx[0]` is the *oldest* wallet ever connected, and
+ * reading index 0 makes the dapp display a stale wallet after the user has
+ * switched accounts. The newest entry is last, so we read from the end.
  */
 function getAddressesFromCache(): { stxAddress: string | null; btcAddress: string | null } {
   if (typeof window === 'undefined') {
     return { stxAddress: null, btcAddress: null };
   }
-  
+
   try {
     const data = getLocalStorage();
-    const stxAddress = data?.addresses?.stx?.[0]?.address ?? null;
-    const btcAddress = data?.addresses?.btc?.[0]?.address ?? null;
-    return { stxAddress, btcAddress };
+    const pickNewest = (list?: { address?: string }[]): string | null => {
+      if (!Array.isArray(list) || list.length === 0) return null;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const addr = list[i]?.address;
+        if (typeof addr === 'string' && addr.length > 0) return addr;
+      }
+      return null;
+    };
+    return {
+      stxAddress: pickNewest(data?.addresses?.stx),
+      btcAddress: pickNewest(data?.addresses?.btc),
+    };
   } catch {
     return { stxAddress: null, btcAddress: null };
   }
@@ -216,7 +255,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // ── Disconnect ──────────────────────────────────────────────────────────────
 
   const handleDisconnect = useCallback(() => {
-    stacksDisconnect();
+    // Always purge, even if the provider-level disconnect throws, otherwise a
+    // stale wallet is silently restored on the next page load.
+    try {
+      stacksDisconnect();
+    } catch (err) {
+      console.warn('stacksDisconnect() failed; purging local session directly:', err);
+    }
+    purgeStacksSession();
     setState(EMPTY_STATE);
     setError(null);
   }, []);
