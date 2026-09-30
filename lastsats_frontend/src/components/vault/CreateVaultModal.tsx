@@ -77,6 +77,12 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
+  // After the vault is created we still need extra wallet prompts to register
+  // beneficiaries. The modal must stay mounted for those to work — the parent
+  // closes it on `onCreated`, which used to unmount the component mid-chain and
+  // silently drop every beneficiary.
+  const [createdVaultId, setCreatedVaultId] = useState<string | null>(null);
+  const [pendingBeneficiaries, setPendingBeneficiaries] = useState<BeneficiaryInput[]>([]);
 
   // Scroll-lock + Escape to close
   useEffect(() => {
@@ -226,7 +232,6 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
         }
 
         const vaultIdStr = String(realVaultId);
-        const vaultIdBig = BigInt(realVaultId);
 
         // Save vault metadata to localStorage for future fetches
         saveVaultId(realVaultId);
@@ -235,55 +240,74 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
           if (b.label) saveBeneficiaryLabel(vaultIdStr, i, b.label);
         });
 
-        const newVault = buildVault(vaultIdStr);
-
-        // Surface the created vault immediately. Beneficiary setup requires a
-        // further wallet prompt per beneficiary, and awaiting it here kept the
-        // button stuck on "Deploying Contract..." even though the vault was
-        // already live on-chain.
-        setLoading(false);
-        setSuccess(true);
-
-        // Chain add-beneficiary transactions sequentially in the background so
-        // the UI isn't blocked on extra wallet prompts.
+const newVault = buildVault(vaultIdStr);
         const validBens = beneficiaries.filter((b) => isValidStacksAddress(b.address));
-        void (async () => {
-          try {
-            for (let i = 0; i < validBens.length; i++) {
-              await runAddBeneficiary(vaultIdBig, validBens[i].address, validBens[i].percentage, validBens[i].timeLockDays);
-            }
 
-            // Finalize beneficiaries to lock them in
-            if (validBens.length > 0) {
-              await withTimeout(
-                new Promise<void>((resolve, reject) => {
-                  openFinalizeBeneficiaries({
-                    vaultId: vaultIdBig,
-                    onFinish: () => resolve(),
-                    onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
-                  });
-                }),
-                'finalize-beneficiaries'
-              );
-            }
-          } catch (err) {
-            // Beneficiary tx was cancelled or failed — vault was still created
-            console.warn('Beneficiary setup incomplete:', err);
-            setTxError(
-              err instanceof Error
-                ? `Vault created, but beneficiary setup did not complete: ${err.message}`
-                : 'Vault created, but beneficiary setup did not complete.'
-            );
-          }
-        })();
+        setCreatedVaultId(vaultIdStr);
+        setPendingBeneficiaries(validBens);
+        setLoading(false);
 
-        setTimeout(() => onCreated(newVault), 1500);
+        if (validBens.length === 0) {
+          // Nothing to register — finish immediately.
+          finishCreation(newVault);
+        }
       },
       onCancel: () => {
         setLoading(false);
       },
     });
   };
+
+  /**
+   * Run add-beneficiary + finalize-beneficiaries for the freshly created vault.
+   *
+   * Kept on the modal (not fired off in the background) because the parent
+   * unmounts this component once `onCreated` fires, and any wallet prompt opened
+   * after that never completes.
+   */
+  const setupBeneficiaries = async () => {
+    if (!createdVaultId) return;
+    const vaultIdBig = BigInt(createdVaultId);
+    const bens = pendingBeneficiaries;
+
+    setLoading(true);
+    setTxError(null);
+    try {
+      for (let i = 0; i < bens.length; i++) {
+        await runAddBeneficiary(vaultIdBig, bens[i].address, bens[i].percentage, bens[i].timeLockDays);
+      }
+
+      await withTimeout(
+        new Promise<void>((resolve, reject) => {
+          openFinalizeBeneficiaries({
+            vaultId: vaultIdBig,
+            onFinish: () => resolve(),
+            onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
+          });
+        }),
+        'finalize-beneficiaries'
+      );
+    } catch (err) {
+      console.warn('Beneficiary setup incomplete:', err);
+      setTxError(
+        err instanceof Error
+          ? `Beneficiary setup did not complete: ${err.message}`
+          : 'Beneficiary setup did not complete.'
+      );
+    } finally {
+      setLoading(false);
+      setPendingBeneficiaries([]);
+      finishCreation(buildVault(String(createdVaultId)));
+    }
+  };
+
+  const finishCreation = useCallback(
+    (vault: Vault) => {
+      setSuccess(true);
+      setTimeout(() => onCreated(vault), 1200);
+    },
+    [onCreated]
+  );
 
   return (
     <div
@@ -333,6 +357,114 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
             <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
               Your vault has been created on Stacks. Your Bitcoin is now protected.
             </p>
+          </div>
+        ) : createdVaultId && !success ? (
+          /* Vault is live on-chain. Beneficiaries are NOT registered yet — they
+             require one wallet confirmation each plus a finalize tx, so make that
+             an explicit, skippable step instead of losing it on modal close. */
+          <div style={{ padding: '32px 28px 24px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: 14,
+                borderRadius: 10,
+                background: 'rgba(16,185,129,0.08)',
+                border: '1px solid rgba(16,185,129,0.25)',
+                marginBottom: 20,
+              }}
+            >
+              <CheckCircle size={20} color="var(--accent-green)" style={{ flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Vault #{createdVaultId} created on-chain
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Your sBTC deposit is secured.
+                </div>
+              </div>
+            </div>
+
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)', marginBottom: 8 }}>
+              Register beneficiaries
+            </h3>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              {pendingBeneficiaries.length === 0
+                ? 'No valid beneficiary addresses were provided.'
+                : `${pendingBeneficiaries.length} beneficiary${pendingBeneficiaries.length > 1 ? 'ies' : ''} will be added, then finalized. Your wallet will ask you to approve each transaction.`}
+            </p>
+
+            {pendingBeneficiaries.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                {pendingBeneficiaries.map((b) => (
+                  <div
+                    key={b.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
+                      fontSize: 12,
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {b.address}
+                    </span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600, flexShrink: 0 }}>
+                      {b.percentage}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {txError && (
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  fontSize: 12,
+                  color: '#fca5a5',
+                  marginBottom: 16,
+                }}
+              >
+                {txError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => finishCreation(buildVault(String(createdVaultId)))}
+                disabled={loading}
+                className="btn-secondary"
+                style={{ padding: '11px 20px', fontSize: 14 }}
+              >
+                Skip for now
+              </button>
+              {pendingBeneficiaries.length > 0 && (
+                <button
+                  onClick={setupBeneficiaries}
+                  disabled={loading}
+                  className="btn-primary"
+                  style={{ padding: '11px 20px', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                      Confirm in wallet...
+                    </>
+                  ) : (
+                    'Add & Finalize'
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>
