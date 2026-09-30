@@ -43,6 +43,34 @@ interface BeneficiaryInput {
   timeLockDays: number;
 }
 
+/**
+ * Reject if a wallet prompt never settles.
+ *
+ * `openContractCall` resolves via onFinish/onCancel. Wallets do not always
+ * fire either when a contract call fails on-chain (e.g. the tx is mined but
+ * aborts, or the extension silently drops the request), which used to leave
+ * the Deploy button spinning forever. This bounds the wait so the UI always
+ * recovers.
+ */
+const WALLET_PROMPT_TIMEOUT_MS = 120_000;
+
+const withTimeout = <T,>(promise: Promise<T>, label: string): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              `${label} timed out after ${WALLET_PROMPT_TIMEOUT_MS / 1000}s. ` +
+                `The wallet may not have completed the request — check your wallet and reload before retrying.`
+            )
+          ),
+        WALLET_PROMPT_TIMEOUT_MS
+      )
+    ),
+  ]);
+
 export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: CreateVaultModalProps) {
   const { stxAddress } = useWallet();
   const [step, setStep] = useState(0);
@@ -148,18 +176,21 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
   /** Run add-beneficiary for one beneficiary, returns a promise that resolves on finish */
   const runAddBeneficiary = useCallback(
     (vaultId: bigint, address: string, percentage: number, timeLockDays: number): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        openAddBeneficiary({
-          vaultId,
-          beneficiaryAddress: address,
-          percentage: pctToBasisPoints(percentage),
-          timeLockBlocks: daysToBlocks(timeLockDays),
-          onFinish: () => resolve(),
-          onCancel: () => reject(new Error('User cancelled add-beneficiary')),
-        });
-      });
+      return withTimeout(
+        new Promise<void>((resolve, reject) => {
+          openAddBeneficiary({
+            vaultId,
+            beneficiaryAddress: address,
+            percentage: pctToBasisPoints(percentage),
+            timeLockBlocks: daysToBlocks(timeLockDays),
+            onFinish: () => resolve(),
+            onCancel: () => reject(new Error('User cancelled add-beneficiary')),
+          });
+        }),
+        'add-beneficiary'
+      );
     },
-    [],
+    []
   );
 
   const handleDeploy = async () => {
@@ -207,17 +238,21 @@ export default function CreateVaultModal({ onClose, onCreated, sbtcBalance }: Cr
 
           // Finalize beneficiaries to lock them in
           if (validBens.length > 0) {
-            await new Promise<void>((resolve, reject) => {
-              openFinalizeBeneficiaries({
-                vaultId: vaultIdBig,
-                onFinish: () => resolve(),
-                onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
-              });
-            });
+            await withTimeout(
+              new Promise<void>((resolve, reject) => {
+                openFinalizeBeneficiaries({
+                  vaultId: vaultIdBig,
+                  onFinish: () => resolve(),
+                  onCancel: () => reject(new Error('User cancelled finalize-beneficiaries')),
+                });
+              }),
+              'finalize-beneficiaries'
+            );
           }
         } catch (err) {
           // Benficiary tx was cancelled or failed — vault was still created
           console.warn('Beneficiary setup incomplete:', err);
+          setTxError(err instanceof Error ? err.message : 'Beneficiary setup failed. The vault was created but beneficiaries may be incomplete.');
         }
 
         const newVault = buildVault(vaultIdStr);

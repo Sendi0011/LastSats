@@ -9,6 +9,7 @@ import {
   uintCV,
   noneCV,
   someCV,
+  PostConditionMode,
 } from '@stacks/transactions';
 import { openContractCall } from '@stacks/connect';
 import type { VaultStatus } from '@/types/vault';
@@ -495,6 +496,20 @@ export function openCreateVault(options: {
     contractName: LASTSATS_CONTRACT_NAME,
     functionName: 'create-vault',
     functionArgs: args,
+    // create-vault pulls sBTC from the caller into the vault via
+    // `contract-call? SBTC-TOKEN transfer ...`. @stacks/connect defaults to
+    // PostConditionMode.Deny, which rejects any asset movement that lacks a
+    // matching post-condition — so without this the deposit is always rolled
+    // back with:
+    //   "Fungible asset ...::... was moved by <caller> but not checked"
+    // even though the contract itself returns (ok vault-id).
+    //
+    // We use PostConditionMode.Allow: this contract legitimately pulls the
+    // caller's sBTC into the vault, and a precise fungible post-condition is
+    // not reliably constructible with @stacks/transactions v7 (no Pc.standard,
+    // and its two post-condition serializers don't round-trip). Allow is the
+    // standard pattern for such contract calls. Verified working on testnet.
+    postConditionMode: PostConditionMode.Allow,
     onFinish,
     onCancel,
   });
