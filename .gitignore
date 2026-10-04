@@ -5,3 +5,6 @@ lastsats_contracts/.testnet-deployer-phrase
 
 # deployer mnemonic — NEVER COMMIT
 lastsats_contracts/.deployer-phrase
+
+# Local diagnostic scripts - absolute paths, not part of the deployable project.
+lastsats_contracts/scripts/check-balances.cjs
