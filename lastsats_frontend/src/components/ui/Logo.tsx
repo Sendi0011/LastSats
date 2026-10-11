@@ -39,7 +39,7 @@ export default function Logo({
   style,
 }: LogoProps) {
   const width = Math.round(height * ASPECT[variant]);
-  const imgStyle: React.CSSProperties = { display: 'block', height, width: 'auto' };
+  const imgStyle: React.CSSProperties = { height, width: 'auto' };
 
   if (theme !== 'auto') {
     return (
@@ -50,7 +50,7 @@ export default function Logo({
         height={height}
         priority={priority}
         className={className}
-        style={{ ...imgStyle, ...style }}
+        style={{ display: 'block', ...imgStyle, ...style }}
       />
     );
   }
