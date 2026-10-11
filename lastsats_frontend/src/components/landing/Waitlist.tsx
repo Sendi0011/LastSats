@@ -4,13 +4,38 @@ import { useState } from 'react';
 import Logo from '@/components/ui/Logo';
 import { useLocalStorage } from '@/lib/useLocalStorage';
 
+type Status = 'idle' | 'loading' | 'error';
+
 export default function Waitlist() {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useLocalStorage('waitlist_submitted', false);
+  const [company, setCompany] = useState('');
+  const [status, setStatus] = useState<Status>('idle');
+  const [error, setError] = useState('');
+  const [subscribed, setSubscribed] = useLocalStorage('waitlist_subscribed', false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email) return;
+    setStatus('loading');
+    setError('');
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, company, source: 'landing' }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setStatus('error');
+        setError(data.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
+      setSubscribed(true);
+      setStatus('idle');
+    } catch {
+      setStatus('error');
+      setError('Network error. Please try again.');
+    }
   };
 
   return (
@@ -58,7 +83,7 @@ export default function Waitlist() {
             Join the waitlist. Be first to access mainnet launch and get 3 months free on any paid plan.
           </p>
 
-          {submitted ? (
+          {subscribed ? (
             <div
               style={{
                 padding: '20px 32px',
@@ -70,30 +95,49 @@ export default function Waitlist() {
                 fontWeight: 600, fontSize: 15,
               }}
             >
-              ✓ You&apos;re on the list! We&apos;ll reach out when mainnet launches.
+              ✓ You&apos;re on the list! We&apos;ll email you when mainnet launches.
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              style={{ display: 'flex', gap: 10, maxWidth: 440, margin: '0 auto', flexWrap: 'wrap' }}
-            >
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                required
-                style={{ flex: '1 1 200px', minWidth: 0 }}
-              />
-              <button
-                type="submit"
-                className="btn-primary"
-                style={{ padding: '12px 24px', fontSize: 14, whiteSpace: 'nowrap', flexShrink: 0 }}
+            <>
+              <form
+                onSubmit={handleSubmit}
+                style={{ display: 'flex', gap: 10, maxWidth: 440, margin: '0 auto', flexWrap: 'wrap' }}
               >
-                Join Waitlist
-              </button>
-            </form>
+                <input
+                  type="text"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  style={{
+                    position: 'absolute', left: '-9999px', width: 1, height: 1,
+                    opacity: 0, pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="input-field"
+                  required
+                  style={{ flex: '1 1 200px', minWidth: 0 }}
+                />
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={status === 'loading'}
+                  style={{ padding: '12px 24px', fontSize: 14, whiteSpace: 'nowrap', flexShrink: 0 }}
+                >
+                  {status === 'loading' ? 'Joining…' : 'Join Waitlist'}
+                </button>
+              </form>
+              {status === 'error' && error && (
+                <p style={{ marginTop: 12, fontSize: 13, color: 'var(--accent-red)' }}>{error}</p>
+              )}
+            </>
           )}
         </div>
       </div>

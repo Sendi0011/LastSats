@@ -42,6 +42,46 @@ To connect to a real deployed contract:
 
 3. Restart the development server
 
+## Waitlist & admin dashboard
+
+Landing-page signups are stored in a Supabase (Postgres) table and can be viewed
+or exported from a password-protected `/admin` page.
+
+### One-time setup
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. In the SQL editor, run [`supabase/schema.sql`](supabase/schema.sql) to create
+   the `waitlist` table (RLS enabled, no public policies).
+3. Add these environment variables — locally in `.env.local`, and in your Vercel
+   project settings for production:
+
+   ```bash
+   SUPABASE_URL=https://<project-ref>.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=<service_role key>   # Project Settings → API
+   ADMIN_PASSWORD=<a strong password>
+   ADMIN_SESSION_SECRET=<run: openssl rand -base64 48>
+   ```
+
+   These are server-only. Do **not** prefix them with `NEXT_PUBLIC_`.
+
+### Viewing signups
+
+- Visit `/admin`, enter `ADMIN_PASSWORD`.
+- The page lists every signup; search by email and use **Export CSV** to
+  download them.
+
+### Notifying users at launch
+
+The list lives in the `waitlist` table. When mainnet ships, either:
+
+- **Export the CSV** from `/admin` and import it into an email tool
+  (Resend Audiences, Buttondown, Loops, Mailchimp…), then send the announcement, or
+- **Send directly from Supabase** (e.g. an Edge Function + Resend) by reading
+  the table.
+
+The `POST /api/waitlist` endpoint validates the address, filters bots with a
+honeypot, rate-limits per IP, and dedupes case-insensitively.
+
 ## Deployment
 
 ### Vercel (Recommended)
