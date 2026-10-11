@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Shield } from 'lucide-react';
+import Logo from '@/components/ui/Logo';
 import { useLocalStorage } from '@/lib/useLocalStorage';
 
 export default function Waitlist() {
@@ -33,13 +33,11 @@ export default function Waitlist() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div
             style={{
-              width: 64, height: 64, borderRadius: 16,
-              background: 'linear-gradient(135deg, #F97316, #EA580C)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 28px', boxShadow: '0 0 40px rgba(249,115,22,0.4)',
+              margin: '0 auto 28px', filter: 'drop-shadow(0 0 28px rgba(249,115,22,0.45))',
             }}
           >
-            <Shield size={28} color="white" />
+            <Logo variant="mark" theme="dark" height={64} />
           </div>
 
           <h2

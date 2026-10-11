@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Check, ArrowRight, Shield } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import { useWallet } from '@/lib/wallet-context';
 import { WalletModal } from '@/components/ui';
 

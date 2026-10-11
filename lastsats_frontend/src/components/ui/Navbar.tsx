@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
-import { Shield, ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide-react';
+import Logo from './Logo';
+import { ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide-react';
 import { shortAddress as fmt } from '@/lib/constants';
 
 export default function Navbar() {
@@ -58,32 +59,8 @@ export default function Navbar() {
           }}
         >
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #F97316, #EA580C)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 16px rgba(249,115,22,0.4)',
-              }}
-            >
-              <Shield size={16} color="white" strokeWidth={2.5} />
-            </div>
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 700,
-                fontSize: 18,
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Last<span style={{ color: 'var(--accent-orange)' }}>Sats</span>
-            </span>
+          <Link href="/" aria-label="LastSats home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Logo variant="lockup" theme="dark" height={30} priority />
           </Link>
 
           {/* Desktop Nav Links */}

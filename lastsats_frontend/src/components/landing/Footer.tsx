@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield } from 'lucide-react';
+import Logo from '@/components/ui/Logo';
 
 const FOOTER_LINKS = ['Docs', 'GitHub', 'Twitter', 'Audit Report'];
 
@@ -21,18 +21,7 @@ export default function Footer() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 28, height: 28, borderRadius: 7,
-              background: 'linear-gradient(135deg, #F97316, #EA580C)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <Shield size={14} color="white" />
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
-            Last<span style={{ color: 'var(--accent-orange)' }}>Sats</span>
-          </span>
+          <Logo variant="lockup" theme="dark" height={26} />
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>— Built on Stacks</span>
         </div>
 
