@@ -54,7 +54,7 @@ export default function Navbar() {
           style={{
             maxWidth: 1200,
             margin: '0 auto',
-            padding: '0 24px',
+            padding: '0 var(--pad-x)',
             height: 64,
             display: 'flex',
             alignItems: 'center',
@@ -101,7 +101,7 @@ export default function Navbar() {
           </div>
 
           {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -140,6 +140,7 @@ export default function Navbar() {
                   href="/dashboard"
                   role="button"
                   aria-label="Go to dashboard"
+                  className="hidden-mobile"
                   style={{
                     padding: '8px 16px',
                     borderRadius: 8,
@@ -193,7 +194,7 @@ export default function Navbar() {
                       }}
                     />
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{shortAddr}</span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                    <span className="hidden-mobile" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                       {loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`}
                     </span>
                     <ChevronDown size={14} color="var(--text-muted)" />
@@ -293,7 +294,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => setShowWalletModal(true)}
-                className="btn-primary"
+                className="btn-primary nav-cta"
                 aria-label="Connect your wallet to LastSats"
                 style={{ padding: '9px 20px', fontSize: 14 }}
               >
@@ -332,6 +333,15 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
+          {connected && (
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              style={{ color: 'var(--accent-orange)', textDecoration: 'none', fontSize: 16, fontWeight: 600, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
+            >
+              Dashboard
+            </Link>
+          )}
         </div>
       )}
 

@@ -8,7 +8,7 @@ export default function Footer() {
   return (
     <footer
       style={{
-        padding: '48px 24px',
+        padding: '48px var(--pad-x)',
         borderTop: '1px solid var(--border)',
         background: 'var(--bg-primary)',
       }}

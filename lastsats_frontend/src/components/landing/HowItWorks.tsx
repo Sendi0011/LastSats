@@ -28,7 +28,7 @@ export default function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      style={{ padding: '120px 24px', maxWidth: 1200, margin: '0 auto' }}
+      style={{ padding: 'var(--section-y) var(--pad-x)', maxWidth: 1200, margin: '0 auto' }}
     >
       <div style={{ textAlign: 'center', marginBottom: 72 }}>
         <span className="badge badge-orange" style={{ marginBottom: 16 }}>How It Works</span>
@@ -52,7 +52,7 @@ export default function HowItWorks() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))',
           gap: 20,
         }}
       >

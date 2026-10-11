@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
-import { Shield, Plus, Users, Lock, TrendingUp, Zap, AlertTriangle } from 'lucide-react';
+import { Shield, Plus, Users, Lock, TrendingUp, Zap } from 'lucide-react';
 import { useVaults } from '@/lib/useVaults';
 import type { Vault } from '@/types/vault';
 import StatCard from './StatCard';
@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: topPadding }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px var(--pad-x)' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
@@ -98,7 +98,7 @@ export default function Dashboard() {
         <UrgentBanner count={urgentCount} />
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', gap: 16, marginBottom: 36 }}>
           <StatCard icon={<Shield size={16} />} label="Total Protected" value={`${totalProtected.toFixed(4)} sBTC`} sub="Across all vaults" accent="var(--accent-orange)" />
           <StatCard icon={<TrendingUp size={16} />} label="sBTC Balance" value={loadingBalances ? '···' : `${sbtcBalance.toFixed(4)} sBTC`} sub="In connected wallet" accent="#F59E0B" />
           <StatCard icon={<Zap size={16} />} label="STX Balance" value={loadingBalances ? '···' : `${stxBalance.toFixed(0)} STX`} sub="For gas fees" accent="var(--accent-blue)" />
@@ -118,7 +118,7 @@ export default function Dashboard() {
             }
           />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: 16 }}>
             {vaults.map((vault) => (
               <VaultCard key={vault.id} vault={vault} onClick={() => setSelectedVault(vault)} />
             ))}

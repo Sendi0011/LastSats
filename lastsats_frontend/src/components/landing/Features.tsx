@@ -14,7 +14,7 @@ export default function Features() {
   return (
     <section
       style={{
-        padding: '80px 24px 120px',
+        padding: 'var(--section-y) var(--pad-x)',
         background: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
@@ -40,7 +40,7 @@ export default function Features() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
             gap: 16,
           }}
         >

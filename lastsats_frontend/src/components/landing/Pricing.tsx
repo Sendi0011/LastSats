@@ -29,7 +29,7 @@ export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <section id="pricing" style={{ padding: '120px 24px', maxWidth: 1200, margin: '0 auto' }}>
+    <section id="pricing" style={{ padding: 'var(--section-y) var(--pad-x)', maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 72 }}>
         <span className="badge badge-orange" style={{ marginBottom: 16 }}>Pricing</span>
         <h2
@@ -49,7 +49,7 @@ export default function Pricing() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))',
           gap: 20, maxWidth: 1000, margin: '0 auto',
         }}
       >

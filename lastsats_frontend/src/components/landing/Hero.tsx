@@ -30,7 +30,7 @@ export default function Hero() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: `${topPadding}px 24px 80px`,
+        padding: `${topPadding}px var(--pad-x) 80px`,
         overflow: 'hidden',
       }}
       className="grid-bg"
@@ -76,7 +76,7 @@ export default function Hero() {
           className="animate-fade-in-up delay-100"
           style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(48px, 7vw, 80px)',
+            fontSize: 'clamp(38px, 8vw, 80px)',
             fontWeight: 800, lineHeight: 1.05,
             letterSpacing: '-0.03em', marginBottom: 28,
             color: 'var(--text-primary)',
@@ -160,14 +160,14 @@ export default function Hero() {
           <div
             key={stat.label}
             style={{
-              flex: 1, padding: '24px 28px',
+              flex: 1, minWidth: 0, padding: 'clamp(14px, 4vw, 28px)',
               borderRight: i < STATS.length - 1 ? '1px solid var(--border)' : 'none',
               textAlign: 'center',
             }}
           >
             <div
               style={{
-                fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800,
+                fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 800,
                 color: i === 2 ? 'var(--accent-green)' : 'var(--text-primary)',
                 marginBottom: 4, letterSpacing: '-0.02em',
               }}

@@ -16,9 +16,10 @@ export default function Waitlist() {
   return (
     <section
       style={{
-        padding: '100px 24px',
+        padding: 'var(--section-y) var(--pad-x)',
         background: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border)',
+        overflow: 'hidden',
       }}
     >
       <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
@@ -74,7 +75,7 @@ export default function Waitlist() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              style={{ display: 'flex', gap: 10, maxWidth: 440, margin: '0 auto' }}
+              style={{ display: 'flex', gap: 10, maxWidth: 440, margin: '0 auto', flexWrap: 'wrap' }}
             >
               <input
                 type="email"
@@ -83,7 +84,7 @@ export default function Waitlist() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field"
                 required
-                style={{ flex: 1 }}
+                style={{ flex: '1 1 200px', minWidth: 0 }}
               />
               <button
                 type="submit"

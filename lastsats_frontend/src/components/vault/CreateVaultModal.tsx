@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Trash2, Loader2, CheckCircle, ChevronRight, ChevronLeft, Info } from 'lucide-react';
 import { Vault } from '@/lib/vault';
-import type { VaultStatus } from '@/types/vault';
 import { validateVaultName, validateSbtcAmount, isValidStacksAddress } from '@/lib/validation';
 import { useWallet } from '@/lib/wallet-context';
 import {
@@ -469,7 +468,7 @@ const newVault = buildVault(vaultIdStr);
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '24px var(--modal-pad-x) 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--text-primary)', marginBottom: 4 }}>
                   Create New Vault
@@ -485,7 +484,7 @@ const newVault = buildVault(vaultIdStr);
             </div>
 
             {/* Step indicator */}
-            <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6 }}>
+            <div style={{ padding: '20px var(--modal-pad-x)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 6 }}>
               {STEPS.map((s, i) => (
                 <div
                   key={s}
@@ -501,7 +500,7 @@ const newVault = buildVault(vaultIdStr);
             </div>
 
             {/* Content */}
-            <div style={{ padding: '28px' }}>
+            <div style={{ padding: 'var(--modal-pad-x)' }}>
               {/* STEP 1 */}
               {step === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -631,12 +630,12 @@ const newVault = buildVault(vaultIdStr);
                             Invalid Stacks address format
                           </p>
                         )}
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1 1 120px', minWidth: 0 }}>
                             <label style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Share %</label>
                             <input className="input-field" type="number" min="1" max="100" value={b.percentage} onChange={(e) => updateBeneficiary(b.id, 'percentage', parseInt(e.target.value) || 0)} />
                           </div>
-                          <div style={{ flex: 1 }}>
+                          <div style={{ flex: '1 1 120px', minWidth: 0 }}>
                             <label style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>Time-lock (days, optional)</label>
                             <input className="input-field" type="number" min="0" placeholder="0 = immediate" value={b.timeLockDays || ''} onChange={(e) => updateBeneficiary(b.id, 'timeLockDays', parseInt(e.target.value) || 0)} />
                           </div>
@@ -789,7 +788,7 @@ const newVault = buildVault(vaultIdStr);
             {/* Footer */}
             <div
               style={{
-                padding: '20px 28px',
+                padding: '20px var(--modal-pad-x)',
                 borderTop: '1px solid var(--border)',
                 display: 'flex',
                 gap: 12,

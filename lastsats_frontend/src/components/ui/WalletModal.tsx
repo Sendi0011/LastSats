@@ -66,7 +66,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           background: 'var(--bg-card)',
           border: '1px solid var(--border-bright)',
           borderRadius: 20,
-          padding: 32,
+          padding: 'clamp(20px, 5vw, 32px)',
           width: '100%',
           maxWidth: 440,
           boxShadow: '0 40px 100px var(--shadow-color)',
