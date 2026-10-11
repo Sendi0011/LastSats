@@ -6,6 +6,8 @@
 
 # Clarinet cache and logs
 .cache/**
+# Simnet deployment plan is regenerated on every check/test.
+deployments/default.simnet-plan.yaml
 history.txt
 logs
 *.log

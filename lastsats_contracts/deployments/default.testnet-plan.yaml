@@ -9,12 +9,28 @@ plan:
     - id: 0
       transactions:
         - requirement-publish:
+            contract-id: SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-registry
+            remap-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
+            remap-principals:
+              SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
+            cost: 112090
+            path: "./.cache/requirements/SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-registry.clar"
+            clarity-version: 3
+        - requirement-publish:
             contract-id: SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token
             remap-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
             remap-principals:
               SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
-            cost: 18650
+            cost: 47590
             path: "./.cache/requirements/SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token.clar"
+            clarity-version: 3
+        - requirement-publish:
+            contract-id: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2.sbtc-mock-token
+            remap-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
+            remap-principals:
+              ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
+            cost: 17190
+            path: "./.cache/requirements/ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2.sbtc-mock-token.clar"
             clarity-version: 3
       epoch: "3.1"
     - id: 1
@@ -22,22 +38,22 @@ plan:
         - contract-publish:
             contract-name: lastsats-vault-v2
             expected-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
-            cost: 119090
+            cost: 161737
             path: contracts/lastsats-vault-v2.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
-            contract-name: sbtc-mock-token
-            expected-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
-            cost: 113242
-            path: contracts/sbtc-mock-token.clar
-            anchor-block-only: true
-            clarity-version: 3
-        - contract-publish:
             contract-name: lastsats-vault-v3
             expected-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
-            cost: 119185
+            cost: 161839
             path: contracts/lastsats-vault-v3.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: lastsats-vault-v6
+            expected-sender: ST1JY6A22J1DXWACXWPR95HZQR72FAP3J835MKFC2
+            cost: 162602
+            path: contracts/lastsats-vault-v6.clar
             anchor-block-only: true
             clarity-version: 2
       epoch: "3.3"
