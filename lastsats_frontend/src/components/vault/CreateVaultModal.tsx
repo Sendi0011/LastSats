@@ -314,7 +314,7 @@ const newVault = buildVault(vaultIdStr);
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
       onClick={onClose}
     >
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'var(--overlay-bg)', backdropFilter: 'blur(8px)' }} />
 
       <div
         onClick={(e) => e.stopPropagation()}
@@ -330,7 +330,7 @@ const newVault = buildVault(vaultIdStr);
           maxWidth: 560,
           maxHeight: '92vh',
           overflowY: 'auto',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.6)',
+          boxShadow: '0 40px 100px var(--shadow-color)',
           animation: 'fadeInUp 0.25s ease',
         }}
       >
@@ -430,7 +430,7 @@ const newVault = buildVault(vaultIdStr);
                   background: 'rgba(239,68,68,0.08)',
                   border: '1px solid rgba(239,68,68,0.25)',
                   fontSize: 12,
-                  color: '#fca5a5',
+                  color: 'var(--accent-red)',
                   marginBottom: 16,
                 }}
               >
@@ -478,7 +478,7 @@ const newVault = buildVault(vaultIdStr);
               </div>
               <button
                 onClick={onClose}
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', borderRadius: 8, padding: 6, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                style={{ background: 'var(--surface-strong)', border: '1px solid var(--border)', borderRadius: 8, padding: 6, cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
               >
                 <X size={16} />
               </button>
@@ -594,7 +594,7 @@ const newVault = buildVault(vaultIdStr);
                     <div
                       key={b.id}
                       style={{
-                        background: 'rgba(255,255,255,0.03)',
+                        background: 'var(--surface-subtle)',
                         border: '1px solid var(--border)',
                         borderRadius: 12,
                         padding: 16,
@@ -758,7 +758,7 @@ const newVault = buildVault(vaultIdStr);
                           display: 'flex',
                           justifyContent: 'space-between',
                           padding: '10px 0',
-                          borderBottom: '1px solid rgba(255,255,255,0.05)',
+                          borderBottom: '1px solid var(--border)',
                         }}
                       >
                         <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{k}</span>

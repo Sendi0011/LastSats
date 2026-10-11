@@ -21,7 +21,7 @@ export default function Footer() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Logo variant="lockup" theme="dark" height={26} />
+          <Logo variant="lockup" height={26} />
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>— Built on Stacks</span>
         </div>
 

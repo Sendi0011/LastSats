@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
 import Logo from './Logo';
-import { ChevronDown, Copy, LogOut, ExternalLink, Menu, X } from 'lucide-react';
+import { ChevronDown, Copy, LogOut, ExternalLink, Menu, X, Sun, Moon } from 'lucide-react';
 import { shortAddress as fmt } from '@/lib/constants';
+import { useTheme } from '@/lib/theme-context';
 
 export default function Navbar() {
   const { connected, stxAddress: address, walletType, disconnect, sbtcBalance, loadingBalances } = useWallet();
+  const { toggleTheme } = useTheme();
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -36,15 +38,16 @@ export default function Navbar() {
   return (
     <>
       <nav
+        className="navbar-surface"
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           zIndex: 100,
-          background: 'rgba(8,11,20,0.85)',
+          background: 'var(--glass-bg)',
           backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         <div
@@ -60,7 +63,7 @@ export default function Navbar() {
         >
           {/* Logo */}
           <Link href="/" aria-label="LastSats home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <Logo variant="lockup" theme="dark" height={30} priority />
+            <Logo variant="lockup" height={30} priority />
           </Link>
 
           {/* Desktop Nav Links */}
@@ -99,6 +102,29 @@ export default function Navbar() {
 
           {/* Right side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle color theme"
+              title="Toggle theme"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: 6,
+                borderRadius: 8,
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            >
+              <Sun size={18} className="theme-icon-dark" />
+              <Moon size={18} className="theme-icon-light" />
+            </button>
+
             {/* Mobile hamburger */}
             <button
               className="show-mobile"
@@ -187,7 +213,7 @@ export default function Navbar() {
                         borderRadius: 12,
                         padding: 8,
                         minWidth: 200,
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                        boxShadow: '0 20px 60px var(--shadow-color)',
                         zIndex: 200,
                       }}
                     >
@@ -229,7 +255,7 @@ export default function Navbar() {
                             textAlign: 'left',
                             transition: 'all 0.15s',
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                         >
                           {item.icon} {item.label}
@@ -286,7 +312,7 @@ export default function Navbar() {
           className="show-mobile"
           style={{
             position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
-            background: 'rgba(8,11,20,0.97)', backdropFilter: 'blur(20px)',
+            background: 'var(--glass-bg-strong)', backdropFilter: 'blur(20px)',
             borderBottom: '1px solid var(--border)',
             padding: '16px 24px 24px',
             display: 'flex', flexDirection: 'column', gap: 4,

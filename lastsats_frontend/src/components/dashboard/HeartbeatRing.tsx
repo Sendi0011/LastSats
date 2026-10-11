@@ -19,7 +19,7 @@ export default function HeartbeatRing({ progress, status, size = 72, strokeWidth
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={strokeWidth} style={{ stroke: 'var(--track-bg)' }} />
         <circle
           cx={size / 2} cy={size / 2} r={r}
           fill="none" stroke={color} strokeWidth={strokeWidth}

@@ -66,7 +66,7 @@ export default function HowItWorks() {
               style={{
                 position: 'absolute', top: -20, right: -10,
                 fontFamily: 'var(--font-display)', fontSize: 80, fontWeight: 800,
-                color: 'rgba(255,255,255,0.03)', lineHeight: 1, userSelect: 'none',
+                color: 'var(--ghost-text)', lineHeight: 1, userSelect: 'none',
               }}
             >
               {item.step}

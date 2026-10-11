@@ -98,7 +98,7 @@ export default function Pricing() {
                   e.currentTarget.style.transform = 'translateY(-1px)';
                   e.currentTarget.style.boxShadow = '0 8px 25px rgba(249,115,22,0.4)';
                 } else {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.background = 'var(--surface-strong)';
                 }
               }}
               onMouseLeave={(e) => {

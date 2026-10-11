@@ -1,7 +1,7 @@
 import Image from 'next/image';
 
 type LogoVariant = 'mark' | 'lockup';
-type LogoTheme = 'dark' | 'light';
+type LogoTheme = 'dark' | 'light' | 'auto';
 
 interface LogoProps {
   variant?: LogoVariant;
@@ -13,7 +13,7 @@ interface LogoProps {
   style?: React.CSSProperties;
 }
 
-const SOURCES: Record<LogoVariant, Record<LogoTheme, string>> = {
+const SOURCES: Record<LogoVariant, Record<'dark' | 'light', string>> = {
   mark: {
     dark: '/brand/logo-mark-dark.png',
     light: '/brand/logo-mark-light.png',
@@ -31,7 +31,7 @@ const ASPECT: Record<LogoVariant, number> = {
 
 export default function Logo({
   variant = 'lockup',
-  theme = 'dark',
+  theme = 'auto',
   height = 30,
   priority = false,
   alt = 'LastSats',
@@ -39,16 +39,45 @@ export default function Logo({
   style,
 }: LogoProps) {
   const width = Math.round(height * ASPECT[variant]);
+  const imgStyle: React.CSSProperties = { display: 'block', height, width: 'auto' };
+
+  if (theme !== 'auto') {
+    return (
+      <Image
+        src={SOURCES[variant][theme]}
+        alt={alt}
+        width={width}
+        height={height}
+        priority={priority}
+        className={className}
+        style={{ ...imgStyle, ...style }}
+      />
+    );
+  }
 
   return (
-    <Image
-      src={SOURCES[variant][theme]}
-      alt={alt}
-      width={width}
-      height={height}
-      priority={priority}
+    <span
       className={className}
-      style={{ display: 'block', height, width: 'auto', ...style }}
-    />
+      style={{ display: 'inline-flex', alignItems: 'center', ...style }}
+    >
+      <Image
+        className="logo-theme-dark"
+        src={SOURCES[variant].dark}
+        alt={alt}
+        width={width}
+        height={height}
+        priority={priority}
+        style={imgStyle}
+      />
+      <Image
+        className="logo-theme-light"
+        src={SOURCES[variant].light}
+        alt={alt}
+        width={width}
+        height={height}
+        priority={priority}
+        style={imgStyle}
+      />
+    </span>
   );
 }

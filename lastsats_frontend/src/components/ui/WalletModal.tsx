@@ -53,7 +53,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'var(--overlay-bg)',
           backdropFilter: 'blur(8px)',
         }}
       />
@@ -69,7 +69,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           padding: 32,
           width: '100%',
           maxWidth: 440,
-          boxShadow: '0 40px 100px rgba(0,0,0,0.6)',
+          boxShadow: '0 40px 100px var(--shadow-color)',
           animation: 'fadeInUp 0.25s ease',
         }}
       >
@@ -96,7 +96,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
             onClick={onClose}
             aria-label="Close wallet connection modal"
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--surface-strong)',
               border: '1px solid var(--border)',
               borderRadius: 8,
               padding: 6,
@@ -108,8 +108,8 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
               flexShrink: 0,
               marginLeft: 16,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-strong)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
           >
             <X size={16} />
           </button>
@@ -157,7 +157,7 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '16px 12px',
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--surface-subtle)',
                 border: '1px solid var(--border)',
                 borderRadius: 12,
               }}

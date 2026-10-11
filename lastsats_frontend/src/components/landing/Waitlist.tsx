@@ -37,7 +37,7 @@ export default function Waitlist() {
               margin: '0 auto 28px', filter: 'drop-shadow(0 0 28px rgba(249,115,22,0.45))',
             }}
           >
-            <Logo variant="mark" theme="dark" height={64} />
+            <Logo variant="mark" height={64} />
           </div>
 
           <h2

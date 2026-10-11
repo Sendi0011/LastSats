@@ -42,7 +42,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
       style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }}
     >
       <div
-        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        style={{ position: 'absolute', inset: 0, background: 'var(--overlay-bg)', backdropFilter: 'blur(4px)' }}
         onClick={onClose}
       />
 
@@ -58,7 +58,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
           maxWidth: 480,
           height: '100%',
           overflowY: 'auto',
-          boxShadow: '-40px 0 80px rgba(0,0,0,0.5)',
+          boxShadow: '-40px 0 80px var(--shadow-color)',
           animation: 'slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
@@ -95,7 +95,7 @@ export default function VaultDetail({ vault, onClose, onHeartbeat, isSendingHear
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--surface-strong)',
               border: '1px solid var(--border)',
               borderRadius: 8,
               padding: 6,
