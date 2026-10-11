@@ -160,16 +160,16 @@ export default function Hero() {
           <div
             key={stat.label}
             style={{
-              flex: 1, minWidth: 0, padding: 'clamp(14px, 4vw, 28px)',
+              flex: 1, minWidth: 0, padding: 'clamp(12px, 3.5vw, 28px)',
               borderRight: i < STATS.length - 1 ? '1px solid var(--border)' : 'none',
               textAlign: 'center',
             }}
           >
             <div
               style={{
-                fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: 800,
+                fontFamily: 'var(--font-display)', fontSize: 'clamp(17px, 4.5vw, 26px)', fontWeight: 800,
                 color: i === 2 ? 'var(--accent-green)' : 'var(--text-primary)',
-                marginBottom: 4, letterSpacing: '-0.02em',
+                marginBottom: 4, letterSpacing: '-0.02em', lineHeight: 1.15, whiteSpace: 'nowrap',
               }}
             >
               {stat.value}
