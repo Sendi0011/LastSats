@@ -1,10 +1,9 @@
-
-# deployer secret
+# Deployer mnemonics and phrases — NEVER COMMIT
 lastsats_contracts/.deployer-phrase
 lastsats_contracts/.testnet-deployer-phrase
 
-# deployer mnemonic — NEVER COMMIT
-lastsats_contracts/.deployer-phrase
-
-# Local diagnostic scripts - absolute paths, not part of the deployable project.
-lastsats_contracts/scripts/check-balances.cjs
+# Local dev-only scripts: hardcoded absolute paths to this machine, so they
+# cannot run anywhere else and are not part of the deployable project. Kept on
+# disk for the author's workflow; the tracked, reproducible test surface is
+# lastsats_contracts/tests plus Clarinet's deployment plan.
+lastsats_contracts/scripts/*.cjs
