@@ -6,8 +6,10 @@
  * @stacks/connect v8 API used:
  *   connect()          — opens wallet selector (Xverse, Leather, etc.)
  *   disconnect()       — clears persisted session
- *   isConnected()      — checks if a session exists in localStorage
  *   getLocalStorage()  — returns { addresses: { stx, btc } } from cache
+ *
+ * Sessions are NOT persisted across reloads: on every page load the app starts
+ * disconnected and the user consciously reconnects.
  *
  * sBTC balance is read directly from chain via SIP-010 get-balance.
  */
@@ -23,7 +25,6 @@ import React, {
 import {
   connect,
   disconnect as stacksDisconnect,
-  isConnected,
   getLocalStorage,
 } from '@stacks/connect';
 import { fetchSbtcBalance, fetchStxBalance } from './stacks';
@@ -79,8 +80,9 @@ const EMPTY_STATE: WalletState = {
  */
 function detectWalletType(): WalletType {
   if (typeof window === 'undefined') return null;
-  if ((window as any).XverseProviders || (window as any).xverse) return 'xverse';
-  if ((window as any).LeatherProvider || (window as any).leather) return 'leather';
+  const globals = window as unknown as Record<string, unknown>;
+  if (globals.XverseProviders || globals.xverse) return 'xverse';
+  if (globals.LeatherProvider || globals.leather) return 'leather';
   return 'unknown';
 }
 
@@ -178,40 +180,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Restore session on mount ────────────────────────────────────────────────
+  // ── No session persistence ──────────────────────────────────────────────────
+  // On mount, purge whatever @stacks/connect cached from a previous visit so the
+  // app always starts disconnected. The user reconnects per visit.
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    let isMounted = true;
-    
-    try {
-      if (!isConnected()) return;
-
-      const { stxAddress, btcAddress } = getAddressesFromCache();
-      if (!stxAddress || !isMounted) return;
-
-      const walletType = detectWalletType();
-      setState({
-        connected: true,
-        stxAddress,
-        btcAddress,
-        walletType,
-        sbtcBalance: 0,
-        stxBalance: 0,
-        loadingBalances: true,
-        balanceError: null,
-      });
-
-      fetchBalances(stxAddress);
-    } catch (error) {
-      console.warn('Failed to restore wallet session:', error);
-    }
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchBalances]);
+    purgeStacksSession();
+  }, []);
 
   // ── Connect ─────────────────────────────────────────────────────────────────
 
@@ -220,11 +195,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const response = await connect();
+      const addresses = (response as { addresses?: unknown }).addresses as
+        | { stx?: { address?: string }[]; btc?: { address?: string }[] }
+        | undefined;
 
-      const stxAddress =
-        (response?.addresses as any)?.stx?.[0]?.address ?? getAddressesFromCache().stxAddress;
-      const btcAddress =
-        (response?.addresses as any)?.btc?.[0]?.address ?? getAddressesFromCache().btcAddress;
+      const stxAddress = addresses?.stx?.find((a) => a.address)?.address ?? getAddressesFromCache().stxAddress;
+      const btcAddress = addresses?.btc?.find((a) => a.address)?.address ?? getAddressesFromCache().btcAddress;
 
       if (!stxAddress) throw new Error('No Stacks address returned from wallet.');
 
@@ -242,8 +218,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       });
 
       fetchBalances(stxAddress);
-    } catch (err: any) {
-      const msg: string = err?.message ?? 'Connection failed.';
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : 'Connection failed.';
       if (!msg.toLowerCase().includes('cancel') && !msg.toLowerCase().includes('closed')) {
         setError(msg);
       }

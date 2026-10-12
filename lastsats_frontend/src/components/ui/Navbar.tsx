@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
 import Logo from './Logo';
-import { ChevronDown, Copy, LogOut, ExternalLink, Menu, X, Sun, Moon } from 'lucide-react';
+import { ChevronDown, Copy, LogOut, ExternalLink, Menu, X, Sun, Moon, Check } from 'lucide-react';
 import { shortAddress as fmt } from '@/lib/constants';
 import { useTheme } from '@/lib/theme-context';
 
@@ -333,14 +333,102 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
-          {connected && (
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileOpen(false)}
-              style={{ color: 'var(--accent-orange)', textDecoration: 'none', fontSize: 16, fontWeight: 600, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
-            >
-              Dashboard
-            </Link>
+          {connected && address && (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                style={{ color: 'var(--accent-orange)', textDecoration: 'none', fontSize: 16, fontWeight: 600, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
+              >
+                Dashboard
+              </Link>
+              <div
+                style={{
+                  padding: '12px 0 4px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                    fontFamily: 'var(--font-display)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 4,
+                  }}
+                >
+                  Wallet · {walletType}
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--text-secondary)',
+                    fontFamily: 'var(--font-mono)',
+                    marginBottom: 8,
+                  }}
+                >
+                  {address.slice(0, 10)}...{address.slice(-6)}
+                </div>
+                {[
+                  {
+                    icon: copied ? <Check size={14} /> : <Copy size={14} />,
+                    label: copied ? 'Copied!' : 'Copy Address',
+                    action: copyAddress,
+                  },
+                  {
+                    icon: <ExternalLink size={14} />,
+                    label: 'View on Explorer',
+                    action: () => window.open(`https://explorer.hiro.so/address/${address}`, '_blank'),
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      item.action();
+                      setMobileOpen(false);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      fontSize: 14,
+                      padding: '8px 0',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    {item.icon} {item.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    disconnect();
+                    setMobileOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--accent-red)',
+                    fontSize: 14,
+                    padding: '8px 0',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <LogOut size={14} /> Disconnect
+                </button>
+              </div>
+            </>
           )}
         </div>
       )}
