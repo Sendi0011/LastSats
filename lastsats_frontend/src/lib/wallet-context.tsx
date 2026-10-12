@@ -6,10 +6,12 @@
  * @stacks/connect v8 API used:
  *   connect()          — opens wallet selector (Xverse, Leather, etc.)
  *   disconnect()       — clears persisted session
+ *   isConnected()      — checks if a session exists in localStorage
  *   getLocalStorage()  — returns { addresses: { stx, btc } } from cache
  *
- * Sessions are NOT persisted across reloads: on every page load the app starts
- * disconnected and the user consciously reconnects.
+ * Session persistence is scoped to the tab: a connected wallet survives a
+ * refresh (the @stacks session lives in localStorage) but a new visit (new
+ * tab/new browser) starts disconnected and asks the user to connect again.
  *
  * sBTC balance is read directly from chain via SIP-010 get-balance.
  */
@@ -25,6 +27,7 @@ import React, {
 import {
   connect,
   disconnect as stacksDisconnect,
+  isConnected,
   getLocalStorage,
 } from '@stacks/connect';
 import { fetchSbtcBalance, fetchStxBalance } from './stacks';
@@ -92,6 +95,30 @@ function detectWalletType(): WalletType {
  */
 const STACKS_ADDRESS_KEY = '@stacks';
 const STACKS_SESSION_KEY = 'blockstack-session';
+
+/**
+ * sessionStorage flag that marks the wallet as connected for THIS tab.
+ * sessionStorage survives a refresh but not a new visit, so it draws the line
+ * between "keep me connected after F5" and "ask me again on a new visit".
+ */
+const WALLET_SESSION_FLAG = 'lastsats_wallet_session';
+
+function sessionFlagSet(): boolean {
+  try {
+    return window.sessionStorage.getItem(WALLET_SESSION_FLAG) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function setSessionFlag(value: boolean): void {
+  try {
+    if (value) window.sessionStorage.setItem(WALLET_SESSION_FLAG, 'true');
+    else window.sessionStorage.removeItem(WALLET_SESSION_FLAG);
+  } catch {
+    /* storage unavailable — session just won't auto-restore */
+  }
+}
 
 /**
  * Hard-reset the persisted @stacks/connect session.
@@ -180,13 +207,45 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── No session persistence ──────────────────────────────────────────────────
-  // On mount, purge whatever @stacks/connect cached from a previous visit so the
-  // app always starts disconnected. The user reconnects per visit.
+  // ── Restore session on refresh (same tab) ───────────────────────────────────
+  // @stacks/connect keeps its session in localStorage, so it survives a refresh.
+  // We only treat it as "connected" when the user started it in THIS tab
+  // (sessionStorage flag). A new tab/new visit has no flag, so the app asks to
+  // connect again even though a stale session may linger in localStorage.
 
   useEffect(() => {
-    purgeStacksSession();
-  }, []);
+    if (typeof window === 'undefined') return;
+
+    let isMounted = true;
+    if (!sessionFlagSet()) return;
+
+    try {
+      if (!isConnected()) return;
+
+      const { stxAddress, btcAddress } = getAddressesFromCache();
+      if (!stxAddress || !isMounted) return;
+
+      const walletType = detectWalletType();
+      setState({
+        connected: true,
+        stxAddress,
+        btcAddress,
+        walletType,
+        sbtcBalance: 0,
+        stxBalance: 0,
+        loadingBalances: true,
+        balanceError: null,
+      });
+
+      fetchBalances(stxAddress);
+    } catch (error) {
+      console.warn('Failed to restore wallet session:', error);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchBalances]);
 
   // ── Connect ─────────────────────────────────────────────────────────────────
 
@@ -218,6 +277,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       });
 
       fetchBalances(stxAddress);
+      setSessionFlag(true);
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -243,6 +303,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn('stacksDisconnect() failed; purging local session directly:', err);
     }
+    setSessionFlag(false);
     purgeStacksSession();
     setState(EMPTY_STATE);
     setError(null);

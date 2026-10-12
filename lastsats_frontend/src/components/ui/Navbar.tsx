@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useWallet } from '@/lib/wallet-context';
 import WalletModal from './WalletModal';
@@ -16,15 +16,29 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const walletMenuRef = useRef<HTMLDivElement | null>(null);
 
   const shortAddr = address ? fmt(address) : '';
 
-  // Close dropdown on Escape
+  // Close the wallet menu on Escape or when clicking/tapping outside of it.
+  // A ref-based handler is used instead of a fullscreen overlay so the overlay
+  // can never sit above the menu and swallow its button clicks.
   useEffect(() => {
     if (!showDropdown) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowDropdown(false); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowDropdown(false);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (walletMenuRef.current && !walletMenuRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
   }, [showDropdown]);
 
   const copyAddress = () => {
@@ -164,7 +178,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* Wallet button */}
-                <div style={{ position: 'relative' }}>
+                <div ref={walletMenuRef} style={{ position: 'relative' }}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
                     aria-label={`Wallet menu for ${shortAddr}. ${sbtcBalance.toFixed(4)} sBTC balance`}
@@ -431,14 +445,6 @@ export default function Navbar() {
             </>
           )}
         </div>
-      )}
-
-      {/* Close dropdown when clicking outside */}
-      {showDropdown && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 150 }}
-          onClick={() => setShowDropdown(false)}
-        />
       )}
     </>
   );

@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Logo from '@/components/ui/Logo';
-import { useLocalStorage } from '@/lib/useLocalStorage';
 
 type Status = 'idle' | 'loading' | 'error';
 
@@ -11,17 +10,7 @@ export default function Waitlist() {
   const [company, setCompany] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
-  const [subscribed, setSubscribed] = useLocalStorage('waitlist_subscribed', false);
-
-  useEffect(() => {
-    try {
-      if (window.localStorage.getItem('waitlist_submitted') === 'true' && !subscribed) {
-        setSubscribed(true);
-      }
-    } catch {
-      /* storage unavailable — ignore */
-    }
-  }, [subscribed, setSubscribed]);
+  const [subscribed, setSubscribed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
