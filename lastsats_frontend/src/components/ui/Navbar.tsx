@@ -90,9 +90,10 @@ export default function Navbar() {
             className="hidden-mobile"
           >
             {[
-              { label: 'How It Works', href: '#how-it-works' },
-              { label: 'Pricing', href: '#pricing' },
-              { label: 'Docs', href: '#' },
+              { label: 'How It Works', href: '/#how-it-works', accent: false },
+              { label: 'Pricing', href: '/#pricing', accent: false },
+              { label: 'Waitlist', href: '/#waitlist', accent: true },
+              { label: 'Docs', href: '#', accent: false },
             ].map((item) => (
               <Link
                 key={item.label}
@@ -100,14 +101,14 @@ export default function Navbar() {
                 role="menuitem"
                 aria-label={`Navigate to ${item.label} section`}
                 style={{
-                  color: 'var(--text-secondary)',
+                  color: item.accent ? 'var(--accent-orange)' : 'var(--text-secondary)',
                   textDecoration: 'none',
                   fontSize: 14,
-                  fontWeight: 500,
+                  fontWeight: item.accent ? 600 : 500,
                   transition: 'color 0.2s',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = item.accent ? 'var(--accent-orange)' : 'var(--text-secondary)')}
               >
                 {item.label}
               </Link>
@@ -334,15 +335,16 @@ export default function Navbar() {
           }}
         >
           {[
-            { label: 'How It Works', href: '#how-it-works' },
-            { label: 'Pricing', href: '#pricing' },
-            { label: 'Docs', href: '#' },
+            { label: 'How It Works', href: '/#how-it-works', accent: false },
+            { label: 'Pricing', href: '/#pricing', accent: false },
+            { label: 'Waitlist', href: '/#waitlist', accent: true },
+            { label: 'Docs', href: '#', accent: false },
           ].map((item) => (
             <a
               key={item.label}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 16, fontWeight: 500, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
+              style={{ color: item.accent ? 'var(--accent-orange)' : 'var(--text-secondary)', textDecoration: 'none', fontSize: 16, fontWeight: item.accent ? 600 : 500, padding: '12px 0', borderBottom: '1px solid var(--border)' }}
             >
               {item.label}
             </a>

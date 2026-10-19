@@ -39,11 +39,13 @@ export default function Waitlist() {
 
   return (
     <section
+      id="waitlist"
       style={{
         padding: 'var(--section-y) var(--pad-x)',
         background: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border)',
         overflow: 'hidden',
+        scrollMarginTop: 72,
       }}
     >
       <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
