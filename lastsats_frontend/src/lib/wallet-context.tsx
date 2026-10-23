@@ -31,6 +31,7 @@ import {
   getLocalStorage,
 } from '@stacks/connect';
 import { fetchSbtcBalance, fetchStxBalance } from './stacks';
+import { getWalletEnv, useWalletEnv, type WalletEnv } from './wallet-env';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,8 @@ interface WalletContextType extends WalletState {
   refreshBalances: () => Promise<void>;
   isConnecting: boolean;
   error: string | null;
+  /** Mobile / in-app-browser detection, shared across the UI. */
+  walletEnv: WalletEnv;
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -83,10 +86,7 @@ const EMPTY_STATE: WalletState = {
  */
 function detectWalletType(): WalletType {
   if (typeof window === 'undefined') return null;
-  const globals = window as unknown as Record<string, unknown>;
-  if (globals.XverseProviders || globals.xverse) return 'xverse';
-  if (globals.LeatherProvider || globals.leather) return 'leather';
-  return 'unknown';
+  return getWalletEnv().walletBrowser ?? 'unknown';
 }
 
 /**
@@ -177,6 +177,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchingRef = useRef(false);
+  const walletEnv = useWalletEnv();
 
   // ── Balance fetcher ─────────────────────────────────────────────────────────
 
@@ -324,6 +325,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         refreshBalances,
         isConnecting,
         error,
+        walletEnv,
       }}
     >
       {children}
