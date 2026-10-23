@@ -349,6 +349,19 @@ export default function Navbar() {
               {item.label}
             </a>
           ))}
+          {!connected && (
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                setShowWalletModal(true);
+              }}
+              className="btn-primary"
+              aria-label="Connect your wallet to LastSats"
+              style={{ marginTop: 16, padding: '13px 20px', fontSize: 15, width: '100%' }}
+            >
+              Connect Wallet
+            </button>
+          )}
           {connected && address && (
             <>
               <Link
