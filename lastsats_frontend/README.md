@@ -42,6 +42,28 @@ To connect to a real deployed contract:
 
 3. Restart the development server
 
+## Mobile wallet connection
+
+Mobile browsers do not expose an injected Stacks provider, so connecting an
+already-installed Xverse/Leather wallet uses WalletConnect, which ships with
+`@stacks/connect` v8.
+
+1. Create a free app at [dashboard.reown.com](https://dashboard.reown.com) and
+   copy its project ID.
+2. Add it to `.env.local`, and to your Vercel project settings for production:
+
+   ```bash
+   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=<project id>
+   ```
+
+3. Restart or redeploy.
+
+With the ID set, the connect modal offers WalletConnect on mobile and contract
+calls (create vault, heartbeat, beneficiaries) are signed through the same
+session. Without it, mobile users are guided into the wallet's in-app browser
+instead of seeing a misleading "download the wallet" prompt. The ID is a public
+identifier, not a secret.
+
 ## Waitlist & admin dashboard
 
 Landing-page signups are stored in a Supabase (Postgres) table and can be viewed
