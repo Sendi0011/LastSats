@@ -4,10 +4,13 @@
  * Wallet context — real Xverse + Leather connect via @stacks/connect v8
  *
  * @stacks/connect v8 API used:
- *   connect()          — opens wallet selector (Xverse, Leather, etc.)
+ *   connect(options)   — opens wallet selector (Xverse, Leather, WalletConnect)
  *   disconnect()       — clears persisted session
  *   isConnected()      — checks if a session exists in localStorage
  *   getLocalStorage()  — returns { addresses: { stx, btc } } from cache
+ *
+ * When NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is set, connect() is handed
+ * WalletConnect options so mobile browsers can reach an installed wallet app.
  *
  * Session persistence is scoped to the tab: a connected wallet survives a
  * refresh (the @stacks session lives in localStorage) but a new visit (new
@@ -32,6 +35,7 @@ import {
 } from '@stacks/connect';
 import { fetchSbtcBalance, fetchStxBalance } from './stacks';
 import { getWalletEnv, useWalletEnv, type WalletEnv } from './wallet-env';
+import { getWalletConnectConnectOptions } from './walletconnect';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -254,7 +258,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnecting(true);
     setError(null);
     try {
-      const response = await connect();
+      const response = await connect(getWalletConnectConnectOptions());
       const addresses = (response as { addresses?: unknown }).addresses as
         | { stx?: { address?: string }[]; btc?: { address?: string }[] }
         | undefined;
