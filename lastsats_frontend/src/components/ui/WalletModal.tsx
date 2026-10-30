@@ -1,6 +1,7 @@
 'use client';
 
 import { useWallet } from '@/lib/wallet-context';
+import { isWalletConnectEnabled } from '@/lib/walletconnect';
 import { X, Loader2, AlertCircle, ExternalLink, Smartphone, Copy, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -16,6 +17,12 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
   const inMobileWalletBrowser =
     walletEnv.isMobile && walletEnv.walletBrowser !== null && walletEnv.hasInjectedProvider;
   const needsWalletBrowser = walletEnv.needsWalletBrowser;
+  // Without an injected provider a mobile browser can only reach a wallet via
+  // WalletConnect. If it isn't configured, showing a Connect button would only
+  // reproduce the misleading "download the wallet" prompt.
+  const canConnect = !needsWalletBrowser || isWalletConnectEnabled;
+  const connectLabel =
+    needsWalletBrowser && isWalletConnectEnabled ? 'Connect with WalletConnect' : 'Connect Wallet';
   const walletBrowserLabel =
     walletEnv.walletBrowser === 'xverse'
       ? 'Xverse'
@@ -193,10 +200,80 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
           ))}
         </div>
 
-        {/* Mobile browsers without an injected provider can't reach a wallet —
-            guide the user into the wallet's in-app browser instead of showing
-            the misleading "download your wallet" prompt. */}
-        {needsWalletBrowser ? (
+        {/* In-app browser detection — connect works without a download step. */}
+        {!needsWalletBrowser && inMobileWalletBrowser && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              background: 'rgba(34,197,94,0.08)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              borderRadius: 10,
+              marginBottom: 16,
+              fontSize: 13,
+              color: 'var(--text-secondary)',
+              lineHeight: 1.5,
+            }}
+          >
+            <Check size={15} color="#22C55E" style={{ flexShrink: 0 }} />
+            <span>{walletBrowserLabel} browser detected — tap Connect Wallet to continue.</span>
+          </div>
+        )}
+
+        {/* Connect CTA — triggers the @stacks/connect wallet selector. On a
+            mobile browser without an injected provider this is only shown when
+            WalletConnect is configured, because it is the only path that can
+            reach an installed wallet. */}
+        {canConnect && (
+          <>
+            <button
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className="btn-primary"
+              aria-label={isConnecting ? 'Connecting to wallet...' : 'Connect wallet to LastSats'}
+              style={{
+                width: '100%',
+                padding: '14px 24px',
+                fontSize: 15,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                marginBottom: needsWalletBrowser ? 8 : 16,
+                opacity: isConnecting ? 0.8 : 1,
+              }}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                  Connecting...
+                </>
+              ) : (
+                connectLabel
+              )}
+            </button>
+            {needsWalletBrowser && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-muted)',
+                  textAlign: 'center',
+                  lineHeight: 1.5,
+                  marginBottom: 16,
+                }}
+              >
+                You&apos;ll be sent to your wallet app to approve, then returned here.
+              </p>
+            )}
+          </>
+        )}
+
+        {/* Mobile browsers without an injected provider cannot reach a wallet
+            directly. With WalletConnect this is the secondary option; without
+            it, it is the only guidance we can give. */}
+        {needsWalletBrowser && (
           <div
             style={{
               marginBottom: 16,
@@ -216,12 +293,15 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
                   color: 'var(--text-primary)',
                 }}
               >
-                Open this page in your wallet app
+                {isWalletConnectEnabled
+                  ? 'Prefer your wallet’s browser?'
+                  : 'Open this page in your wallet app'}
               </h3>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 14 }}>
-              Your mobile browser can&apos;t reach Xverse or Leather directly. Open this
-              link inside the wallet&apos;s built-in browser to connect.
+              {isWalletConnectEnabled
+                ? 'You can also open this link inside Xverse or Leather to connect without WalletConnect.'
+                : 'Your mobile browser can’t reach Xverse or Leather directly. Open this link inside the wallet’s built-in browser to connect.'}
             </p>
             <ol
               style={{
@@ -307,60 +387,6 @@ export default function WalletModal({ isOpen, onClose }: WalletModalProps) {
               </a>
             </p>
           </div>
-        ) : (
-          <>
-            {/* In-app browser detection — connect works without a download step. */}
-            {inMobileWalletBrowser && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 14px',
-                  background: 'rgba(34,197,94,0.08)',
-                  border: '1px solid rgba(34,197,94,0.2)',
-                  borderRadius: 10,
-                  marginBottom: 16,
-                  fontSize: 13,
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.5,
-                }}
-              >
-                <Check size={15} color="#22C55E" style={{ flexShrink: 0 }} />
-                <span>
-                  {walletBrowserLabel} browser detected — tap Connect Wallet to continue.
-                </span>
-              </div>
-            )}
-
-            {/* Connect button — triggers @stacks/connect unified wallet selector */}
-            <button
-              onClick={handleConnect}
-              disabled={isConnecting}
-              className="btn-primary"
-              aria-label={isConnecting ? "Connecting to wallet..." : "Connect wallet to LastSats"}
-              style={{
-                width: '100%',
-                padding: '14px 24px',
-                fontSize: 15,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                marginBottom: 16,
-                opacity: isConnecting ? 0.8 : 1,
-              }}
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                  Connecting...
-                </>
-              ) : (
-                'Connect Wallet'
-              )}
-            </button>
-          </>
         )}
 
         {/* Error */}
