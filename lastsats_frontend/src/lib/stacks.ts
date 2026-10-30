@@ -2,14 +2,17 @@
  * Stacks chain utilities — network config, balance reads
  */
 import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
+import { request } from '@stacks/connect';
 import {
   fetchCallReadOnlyFunction,
   principalCV,
   uintCV,
   noneCV,
   someCV,
-  PostConditionMode,
 } from '@stacks/transactions';
+import type { ClarityValue } from '@stacks/transactions';
+import { getWalletConnectConnectOptions } from './walletconnect';
+import type { VaultStatus } from '@/types/vault';
 
 
 /**
@@ -73,9 +76,6 @@ export function cvToPlain(cv: unknown): any {
   for (const [k, v] of Object.entries(cv)) out[k] = cvToPlain(v);
   return out;
 }
-import { openContractCall } from '@stacks/connect';
-import type { VaultStatus } from '@/types/vault';
-
 // ── Network ───────────────────────────────────────────────────────────────────
 
 export const IS_MAINNET = typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_STACKS_NETWORK !== 'testnet';
@@ -600,6 +600,47 @@ export async function fetchAllBeneficiaries(
 
 // ── Write transaction helpers ────────────────────────────────────────────────
 
+export interface ContractTxResult {
+  txId?: string;
+  txRaw?: string;
+}
+
+/**
+ * Sign and broadcast a contract call through the selected wallet.
+ *
+ * Uses the v8 `request('stx_callContract', …)` API instead of the deprecated
+ * `openContractCall`, which requires an injected browser provider and therefore
+ * cannot sign for a WalletConnect session. The callbacks keep the shape the UI
+ * already consumes (`{ txId, txRaw }`).
+ */
+function callContract(options: {
+  functionName: string;
+  functionArgs: ClarityValue[];
+  postConditionMode?: 'allow' | 'deny';
+  onFinish?: (data: ContractTxResult) => void;
+  onCancel?: (error?: Error) => void;
+}): void {
+  const { functionName, functionArgs, postConditionMode, onFinish, onCancel } = options;
+
+  request(
+    getWalletConnectConnectOptions(),
+    'stx_callContract',
+    {
+      contract: `${LASTSATS_CONTRACT_PRINCIPAL}.${LASTSATS_CONTRACT_NAME}`,
+      functionName,
+      functionArgs,
+      network: IS_MAINNET ? 'mainnet' : 'testnet',
+      ...(postConditionMode ? { postConditionMode } : {}),
+    }
+  )
+    .then((result) => {
+      onFinish?.({ txId: result.txid, txRaw: result.transaction });
+    })
+    .catch((error: unknown) => {
+      onCancel?.(error instanceof Error ? error : new Error(String(error)));
+    });
+}
+
 /**
  * Open the wallet to sign a create-vault transaction.
  * The caller handles onFinish/onCancel for tx lifecycle.
@@ -609,7 +650,7 @@ export function openCreateVault(options: {
   sbtcAmountMicro: bigint;
   tier: bigint;
   guardian?: string;
-  onFinish?: (data: any) => void;
+  onFinish?: (data: ContractTxResult) => void;
   onCancel?: (error?: Error) => void;
 }) {
   const { heartbeatIntervalBlocks, sbtcAmountMicro, tier, guardian, onFinish, onCancel } = options;
@@ -620,26 +661,21 @@ export function openCreateVault(options: {
     guardian ? someCV(principalCV(guardian)) : noneCV(),
   ];
 
-  openContractCall({
-    network: STACKS_NETWORK,
-    contractAddress: LASTSATS_CONTRACT_PRINCIPAL,
-    contractName: LASTSATS_CONTRACT_NAME,
+  callContract({
     functionName: 'create-vault',
     functionArgs: args,
     // create-vault pulls sBTC from the caller into the vault via
-    // `contract-call? SBTC-TOKEN transfer ...`. @stacks/connect defaults to
-    // PostConditionMode.Deny, which rejects any asset movement that lacks a
-    // matching post-condition — so without this the deposit is always rolled
-    // back with:
+    // `contract-call? SBTC-TOKEN transfer ...`. The wallet defaults to denying
+    // asset movement that lacks a matching post-condition, which rolls the
+    // deposit back with:
     //   "Fungible asset ...::... was moved by <caller> but not checked"
     // even though the contract itself returns (ok vault-id).
     //
-    // We use PostConditionMode.Allow: this contract legitimately pulls the
-    // caller's sBTC into the vault, and a precise fungible post-condition is
-    // not reliably constructible with @stacks/transactions v7 (no Pc.standard,
-    // and its two post-condition serializers don't round-trip). Allow is the
-    // standard pattern for such contract calls. Verified working on testnet.
-    postConditionMode: PostConditionMode.Allow,
+    // `allow` is the standard pattern for a contract that legitimately pulls
+    // the caller's sBTC: a precise fungible post-condition is not reliably
+    // constructible with @stacks/transactions v7 (no Pc.standard, and its two
+    // post-condition serializers don't round-trip). Verified on testnet.
+    postConditionMode: 'allow',
     onFinish,
     onCancel,
   });
@@ -648,13 +684,10 @@ export function openCreateVault(options: {
 /** Open the wallet to sign a send-heartbeat transaction. */
 export function openSendHeartbeat(options: {
   vaultId: bigint;
-  onFinish?: (data: any) => void;
+  onFinish?: (data: ContractTxResult) => void;
   onCancel?: (error?: Error) => void;
 }) {
-  openContractCall({
-    network: STACKS_NETWORK,
-    contractAddress: LASTSATS_CONTRACT_PRINCIPAL,
-    contractName: LASTSATS_CONTRACT_NAME,
+  callContract({
     functionName: 'send-heartbeat',
     functionArgs: [uintCV(options.vaultId)],
     onFinish: options.onFinish,
@@ -668,14 +701,11 @@ export function openAddBeneficiary(options: {
   beneficiaryAddress: string;
   percentage: bigint;
   timeLockBlocks: bigint;
-  onFinish?: (data: any) => void;
+  onFinish?: (data: ContractTxResult) => void;
   onCancel?: (error?: Error) => void;
 }) {
   const { vaultId, beneficiaryAddress, percentage, timeLockBlocks, onFinish, onCancel } = options;
-  openContractCall({
-    network: STACKS_NETWORK,
-    contractAddress: LASTSATS_CONTRACT_PRINCIPAL,
-    contractName: LASTSATS_CONTRACT_NAME,
+  callContract({
     functionName: 'add-beneficiary',
     functionArgs: [
       uintCV(vaultId),
@@ -691,13 +721,10 @@ export function openAddBeneficiary(options: {
 /** Open the wallet to sign a finalize-beneficiaries transaction. */
 export function openFinalizeBeneficiaries(options: {
   vaultId: bigint;
-  onFinish?: (data: any) => void;
+  onFinish?: (data: ContractTxResult) => void;
   onCancel?: (error?: Error) => void;
 }) {
-  openContractCall({
-    network: STACKS_NETWORK,
-    contractAddress: LASTSATS_CONTRACT_PRINCIPAL,
-    contractName: LASTSATS_CONTRACT_NAME,
+  callContract({
     functionName: 'finalize-beneficiaries',
     functionArgs: [uintCV(options.vaultId)],
     onFinish: options.onFinish,
