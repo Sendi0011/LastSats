@@ -2,7 +2,12 @@
 
 import Logo from '@/components/ui/Logo';
 
-const FOOTER_LINKS = ['Docs', 'GitHub', 'Twitter', 'Audit Report'];
+const FOOTER_LINKS = [
+  { label: 'Docs', href: '#' },
+  { label: 'GitHub', href: '#' },
+  { label: 'Twitter', href: 'https://x.com/lastsats' },
+  { label: 'Audit Report', href: '#' },
+];
 
 export default function Footer() {
   return (
@@ -26,17 +31,21 @@ export default function Footer() {
         </div>
 
         <div style={{ display: 'flex', gap: 28 }}>
-          {FOOTER_LINKS.map((link) => (
-            <a
-              key={link}
-              href="#"
-              style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
-            >
-              {link}
-            </a>
-          ))}
+          {FOOTER_LINKS.map(({ label, href }) => {
+            const isExternal = href.startsWith('http');
+            return (
+              <a
+                key={label}
+                href={href}
+                {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+              >
+                {label}
+              </a>
+            );
+          })}
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
